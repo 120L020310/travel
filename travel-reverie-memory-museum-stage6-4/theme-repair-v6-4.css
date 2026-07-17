@@ -1,0 +1,839 @@
+
+/* ==========================================================================
+   Travel Reverie 6.1 · Targeted Theme Repair
+   - Oil Painting restores the exact Stage 5 visual layer.
+   - Other themes keep their current Hero/navigation/GSAP composition.
+   - Only covers, typography, spacing and theme-local rendering are repaired.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Highest priority: restore Oil Painting to the previous layout
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="oil"] #memoryWorldStage,
+html[data-memory-style="oil"] .journal-world-header,
+html[data-memory-style="oil"] .map-world-marquee,
+html[data-memory-style="oil"] .archive-world-label,
+html[data-memory-style="oil"] .memory-transition,
+html[data-memory-style="oil"] .memory-cursor,
+html[data-memory-style="oil"] .memory-theme-component,
+html[data-memory-style="oil"] .universe-card-layer,
+html[data-memory-style="oil"] .universe-cover-layer {
+  display: none !important;
+}
+
+/*
+  style-v6-1.css is the unchanged Stage 5 base stylesheet. The Stage 6 world
+  stylesheet is disabled in Oil mode by JavaScript, so these rules only hide
+  the extra Stage 6 DOM nodes that did not exist in the previous edition.
+*/
+html[data-memory-style="oil"] {
+  scroll-behavior: auto;
+}
+
+html[data-memory-style="oil"] body {
+  cursor: auto;
+}
+
+/* --------------------------------------------------------------------------
+   Non-Oil themes use their own component structures
+   -------------------------------------------------------------------------- */
+
+html:not([data-memory-style="oil"]) .memory-cover-design,
+html:not([data-memory-style="oil"]) .memory-card-chrome,
+html:not([data-memory-style="oil"]) .universe-card-layer,
+html:not([data-memory-style="oil"]) .universe-cover-layer {
+  display: none !important;
+}
+
+.memory-cover-component,
+.memory-card-component {
+  position: absolute;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.memory-cover-component {
+  inset: 0;
+  overflow: hidden;
+}
+
+.memory-card-component {
+  inset: 0;
+}
+
+.trip-card {
+  isolation: isolate;
+}
+
+.media-frame {
+  isolation: isolate;
+}
+
+.card-content,
+.card-footer,
+.edit-trip {
+  position: relative;
+  z-index: 18;
+}
+
+/* --------------------------------------------------------------------------
+   Shared blank-space and broken-grid repairs — non-Oil only
+   -------------------------------------------------------------------------- */
+
+html:not([data-memory-style="oil"]) .section-shell {
+  min-height: 0 !important;
+}
+
+html:not([data-memory-style="oil"]) .journal-grid,
+html:not([data-memory-style="oil"]) .archive-grid {
+  align-items: start;
+  grid-auto-rows: minmax(0, auto);
+}
+
+html:not([data-memory-style="oil"]) .trip-card,
+html:not([data-memory-style="oil"]) .archive-card,
+html:not([data-memory-style="oil"]) .route-stage {
+  min-height: 0;
+  height: auto;
+}
+
+html:not([data-memory-style="oil"]) .trip-card {
+  align-self: start;
+}
+
+html:not([data-memory-style="oil"]) .story,
+html:not([data-memory-style="oil"]) .country-line,
+html:not([data-memory-style="oil"]) .route-stage,
+html:not([data-memory-style="oil"]) .archive-card {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+html:not([data-memory-style="oil"]) .route-timeline:empty,
+html:not([data-memory-style="oil"]) .journal-grid:empty,
+html:not([data-memory-style="oil"]) .archive-grid:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Y2K · genuine pixel typography and independent desktop cover
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="y2k"] {
+  --y2k-pixel-font:
+    'Silkscreen',
+    'ZCOOL QingKe HuangYou',
+    'Noto Sans SC',
+    monospace;
+}
+
+html[data-memory-style="y2k"] :is(
+  .brand b,
+  .hero-title,
+  .hero-title *,
+  .memory-interface-y2k,
+  .hero-card strong,
+  .section-heading h2,
+  .section-heading .eyebrow,
+  .journal-world-header,
+  .archive-world-label,
+  .trip-card h3,
+  .archive-card h3,
+  .route-head h3,
+  .route-stage strong,
+  .map-caption,
+  .card-meta,
+  .coordinate,
+  button,
+  .pill-button,
+  .primary-button,
+  .ghost-button,
+  .tiny-button,
+  .map-mode,
+  .tag,
+  .chip,
+  .filter-cluster label,
+  .memory-style-control
+) {
+  font-family: var(--y2k-pixel-font) !important;
+  font-weight: 400 !important;
+}
+
+html[data-memory-style="y2k"] .hero-word-light {
+  font-family: var(--y2k-pixel-font) !important;
+  font-style: normal !important;
+}
+
+html[data-memory-style="y2k"] .hero-title {
+  letter-spacing: -.045em !important;
+}
+
+html[data-memory-style="y2k"] .journal-grid {
+  grid-auto-flow: dense;
+  gap: clamp(18px, 2vw, 30px);
+}
+
+html[data-memory-style="y2k"] .trip-card,
+html[data-memory-style="y2k"] .trip-card:nth-child(n) {
+  grid-row: auto !important;
+  margin-top: 0 !important;
+}
+
+html[data-memory-style="y2k"] .media-frame {
+  min-height: clamp(285px, 30vw, 470px);
+}
+
+html[data-memory-style="y2k"] .memory-cover-component-y2k {
+  color: #fff;
+  background:
+    linear-gradient(0deg, rgba(34, 40, 76, .72), transparent 48%),
+    linear-gradient(120deg, transparent 0 38%, rgba(255,255,255,.19) 47%, transparent 57%);
+}
+
+.y2k-cover-titlebar {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 7px;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border: 1px solid #5c6a9c;
+  color: #fff;
+  background: linear-gradient(90deg, #65cff5, #9c86ea, #f375b0);
+  box-shadow: 2px 2px 0 rgba(51,62,106,.22);
+  font: 400 .44rem/1 var(--y2k-pixel-font);
+}
+
+.y2k-cover-titlebar b {
+  font-weight: 400;
+}
+
+.y2k-cover-pixel-border {
+  position: absolute;
+  inset: 35px 7px 7px;
+  border: 3px solid rgba(255,255,255,.78);
+  box-shadow:
+    inset 0 0 0 2px rgba(70,83,133,.58),
+    3px 3px 0 rgba(49,58,101,.32);
+}
+
+.y2k-cover-crt {
+  position: absolute;
+  inset: 35px 7px 7px;
+  opacity: .45;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255,255,255,.08) 0 1px,
+      transparent 1px 4px
+    );
+  mix-blend-mode: overlay;
+}
+
+.y2k-cover-folder {
+  position: absolute;
+  left: 17px;
+  top: 53px;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 45px;
+  color: #5d6392;
+  background: #fff071;
+  clip-path: polygon(0 18%,32% 18%,42% 0,100% 0,100% 100%,0 100%);
+  font: 400 1rem/1 var(--y2k-pixel-font);
+}
+
+.y2k-cover-folder small {
+  position: absolute;
+  left: 0;
+  top: 51px;
+  width: 78px;
+  color: white;
+  font: 400 .38rem/1 var(--y2k-pixel-font);
+}
+
+.y2k-cover-icon {
+  position: absolute;
+  font-family: var(--y2k-pixel-font);
+  text-shadow: 2px 2px 0 rgba(54,63,106,.35);
+}
+
+.y2k-cover-icon-a {
+  right: 22px;
+  top: 55px;
+  color: #fff171;
+  font-size: 1.55rem;
+}
+
+.y2k-cover-icon-b {
+  right: 68px;
+  top: 91px;
+  color: #ff79b6;
+  font-size: 1.05rem;
+}
+
+.y2k-cover-label {
+  position: absolute;
+  left: 17px;
+  bottom: 52px;
+  padding: 5px 7px;
+  color: #3f4d7b;
+  background: rgba(255,255,255,.88);
+  border: 1px solid #6674a5;
+  box-shadow: 2px 2px 0 rgba(57,68,113,.24);
+  font: 400 .45rem/1 var(--y2k-pixel-font);
+}
+
+.y2k-cover-camera {
+  position: absolute;
+  right: 18px;
+  bottom: 52px;
+  font: 400 .42rem/1 var(--y2k-pixel-font);
+}
+
+.y2k-cover-component strong {
+  position: absolute;
+  left: 17px;
+  right: 17px;
+  bottom: 17px;
+  color: white;
+  font: 400 clamp(1.08rem, 2.1vw, 1.75rem)/.95 var(--y2k-pixel-font);
+  text-shadow:
+    2px 2px 0 #e25f9d,
+    4px 4px 0 rgba(104,205,241,.82);
+}
+
+.y2k-card-status,
+.y2k-card-file,
+.y2k-card-sticker {
+  position: absolute;
+  font-family: var(--y2k-pixel-font);
+}
+
+.y2k-card-status {
+  right: 12px;
+  top: 11px;
+  color: #566493;
+  font-size: .40rem;
+}
+
+.y2k-card-file {
+  left: 14px;
+  bottom: 10px;
+  color: #6e7aa4;
+  font-size: .38rem;
+}
+
+.y2k-card-sticker {
+  right: -7px;
+  top: 44%;
+  color: #ff73b3;
+  font-size: 1.25rem;
+  text-shadow: 2px 2px 0 white;
+  transition: transform .30s cubic-bezier(.2,1.45,.35,1);
+}
+
+html[data-memory-style="y2k"] .trip-card:hover .y2k-card-sticker {
+  transform: translateY(-7px) rotate(8deg) scale(1.12);
+}
+
+/* --------------------------------------------------------------------------
+   Film · independent 35mm / cinema-collection cover
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="film"] .section-shell {
+  padding-top: clamp(70px, 8vw, 120px);
+  padding-bottom: clamp(70px, 8vw, 120px);
+}
+
+html[data-memory-style="film"] .journal-grid {
+  gap: clamp(64px, 8vw, 112px);
+}
+
+html[data-memory-style="film"] .trip-card {
+  min-height: 0 !important;
+}
+
+html[data-memory-style="film"] .media-frame {
+  min-height: clamp(440px, 58vw, 720px);
+}
+
+html[data-memory-style="film"] .card-content {
+  min-height: clamp(340px, 42vw, 590px);
+}
+
+html[data-memory-style="film"] .archive-card,
+html[data-memory-style="film"] .archive-card:nth-child(n) {
+  min-height: clamp(390px, 48vw, 560px);
+}
+
+html[data-memory-style="film"] .memory-cover-component-film {
+  color: #fff0d5;
+  background:
+    linear-gradient(180deg, rgba(15,11,9,.26), transparent 40%),
+    linear-gradient(0deg, rgba(14,10,8,.82), transparent 55%);
+}
+
+.film-cover-perforation {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 22px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #191410 0 18px,
+      transparent 18px 30px
+    );
+  opacity: .90;
+}
+
+.film-cover-perforation-top {
+  top: 0;
+}
+
+.film-cover-perforation-bottom {
+  bottom: 0;
+}
+
+.film-cover-scratch {
+  position: absolute;
+  inset: 0;
+  opacity: .22;
+  background:
+    linear-gradient(88deg, transparent 31%, rgba(255,245,220,.38) 31.2%, transparent 31.7%),
+    linear-gradient(92deg, transparent 73%, rgba(255,245,220,.30) 73.2%, transparent 73.7%);
+}
+
+.film-cover-flare {
+  position: absolute;
+  right: -12%;
+  top: 12%;
+  width: 52%;
+  height: 36%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255,202,136,.45), rgba(198,76,43,.16) 38%, transparent 68%);
+  filter: blur(8px);
+  mix-blend-mode: screen;
+}
+
+.film-cover-stock,
+.film-cover-ticket,
+.film-cover-timecode,
+.film-cover-frame {
+  position: absolute;
+  font-family: 'Space Mono', 'Noto Sans SC', monospace;
+}
+
+.film-cover-stock {
+  left: 34px;
+  top: 37px;
+  color: #e4a06d;
+  font-size: .48rem;
+  letter-spacing: .10em;
+}
+
+.film-cover-ticket {
+  right: 32px;
+  top: 36px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255,226,187,.42);
+  color: rgba(255,237,211,.80);
+  font-size: .42rem;
+  letter-spacing: .06em;
+}
+
+.film-cover-timecode {
+  right: 34px;
+  bottom: 37px;
+  color: #e08358;
+  font-size: .46rem;
+}
+
+.film-cover-frame {
+  left: 35px;
+  bottom: 38px;
+  color: rgba(255,238,211,.70);
+  font-size: .43rem;
+}
+
+.film-cover-component strong {
+  position: absolute;
+  left: 35px;
+  right: 28px;
+  bottom: 88px;
+  color: #fff0d5;
+  font: 600 clamp(1.75rem, 3.6vw, 4.1rem)/.87 'Playfair Display', 'Noto Serif SC', serif;
+  text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(8,5,4,.52);
+}
+
+.film-cover-component small {
+  position: absolute;
+  left: 37px;
+  bottom: 70px;
+  color: rgba(255,236,205,.72);
+  font: 400 .48rem/1 'Space Mono', monospace;
+  letter-spacing: .12em;
+}
+
+.film-card-scene,
+.film-card-stock,
+.film-card-number {
+  position: absolute;
+  color: rgba(232,211,179,.68);
+  font: 400 .42rem/1 'Space Mono', monospace;
+}
+
+.film-card-scene {
+  left: 11px;
+  top: 11px;
+}
+
+.film-card-stock {
+  right: 11px;
+  top: 11px;
+}
+
+.film-card-number {
+  right: 12px;
+  bottom: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Sketchbook · encoding, overlap and complete-layout repair
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="sketchbook"] body,
+html[data-memory-style="sketchbook"] input,
+html[data-memory-style="sketchbook"] textarea,
+html[data-memory-style="sketchbook"] select {
+  font-family: 'Noto Sans SC', 'Inter', sans-serif !important;
+}
+
+html[data-memory-style="sketchbook"] :is(
+  .hero-title,
+  .section-heading h2,
+  .trip-card h3,
+  .archive-card h3,
+  .route-head h3
+) {
+  font-family:
+    'Patrick Hand',
+    'Ma Shan Zheng',
+    'Noto Sans SC',
+    cursive !important;
+}
+
+html[data-memory-style="sketchbook"] .journal-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-flow: row !important;
+  gap: clamp(34px, 5vw, 72px) !important;
+}
+
+html[data-memory-style="sketchbook"] .trip-card,
+html[data-memory-style="sketchbook"] .trip-card:nth-child(n) {
+  grid-column: auto !important;
+  margin-top: 0 !important;
+  transform: rotate(var(--universe-rotate, 0deg)) !important;
+  overflow: visible;
+}
+
+html[data-memory-style="sketchbook"] .media-frame {
+  min-height: clamp(340px, 42vw, 590px);
+}
+
+html[data-memory-style="sketchbook"] .card-content {
+  padding-bottom: 34px;
+}
+
+html[data-memory-style="sketchbook"] .story {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.72;
+}
+
+html[data-memory-style="sketchbook"] .route-sidebar {
+  top: 0 !important;
+}
+
+html[data-memory-style="sketchbook"] .archive-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px;
+}
+
+html[data-memory-style="sketchbook"] .archive-card,
+html[data-memory-style="sketchbook"] .archive-card:nth-child(n) {
+  grid-column: auto !important;
+  transform: rotate(var(--archive-rotate, 0deg));
+}
+
+html[data-memory-style="sketchbook"] .memory-cover-component-sketchbook {
+  overflow: visible;
+  color: #344a53;
+  background:
+    linear-gradient(0deg, rgba(246,239,220,.90), transparent 49%);
+}
+
+.sketch-cover-tape {
+  position: absolute;
+  top: -8px;
+  width: 76px;
+  height: 20px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(215,188,131,.68) 0 8px,
+      rgba(234,211,163,.68) 8px 16px
+    );
+  border-left: 1px solid rgba(101,80,47,.10);
+  border-right: 1px solid rgba(101,80,47,.10);
+}
+
+.sketch-cover-tape-left {
+  left: 13%;
+  transform: rotate(-4deg);
+}
+
+.sketch-cover-tape-right {
+  right: 12%;
+  transform: rotate(3deg);
+}
+
+.sketch-cover-pencil-line {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 68px;
+  height: 1px;
+  background: rgba(50,73,83,.36);
+  transform: rotate(-1deg);
+}
+
+.sketch-cover-circle {
+  position: absolute;
+  right: 12%;
+  top: 18%;
+  width: 68px;
+  height: 62px;
+  border: 2px solid rgba(161,82,68,.52);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+}
+
+.sketch-cover-star,
+.sketch-cover-flower {
+  position: absolute;
+  font-family: 'Patrick Hand', 'Ma Shan Zheng', cursive;
+}
+
+.sketch-cover-star {
+  left: 9%;
+  top: 21%;
+  color: #a25447;
+  font-size: 1.5rem;
+  transform: rotate(-9deg);
+}
+
+.sketch-cover-flower {
+  right: 15%;
+  bottom: 25%;
+  color: #526e63;
+  font-size: 1.15rem;
+}
+
+.sketch-cover-number {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  color: #596e76;
+  font: 700 .66rem/1 'Caveat', 'Ma Shan Zheng', cursive;
+}
+
+.sketch-cover-note {
+  position: absolute;
+  left: 20px;
+  bottom: 76px;
+  max-width: 52%;
+  color: #a25347;
+  font: 700 .87rem/1.2 'Caveat', 'Ma Shan Zheng', cursive;
+  transform: rotate(-3deg);
+}
+
+.sketch-cover-component strong {
+  position: absolute;
+  left: 20px;
+  bottom: 25px;
+  color: #344b55;
+  font: 700 clamp(1.55rem, 3vw, 3rem)/.95 'Patrick Hand', 'Ma Shan Zheng', cursive;
+}
+
+.sketch-card-fold {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  background:
+    linear-gradient(225deg, #ded5c0 0 48%, rgba(73,88,94,.20) 49% 51%, transparent 52%);
+}
+
+.sketch-card-arrow {
+  position: absolute;
+  right: 18px;
+  bottom: 13px;
+  color: #a15548;
+  font: 700 1.35rem/1 'Patrick Hand', cursive;
+  transform: rotate(8deg);
+}
+
+.sketch-card-stamp {
+  position: absolute;
+  left: 17px;
+  bottom: 12px;
+  padding: 5px 7px;
+  border: 1px solid rgba(62,83,92,.42);
+  color: rgba(62,83,92,.58);
+  font: 700 .43rem/1.18 'Space Mono', 'Noto Sans SC', monospace;
+  text-align: center;
+  transform: rotate(-2deg);
+}
+
+/* --------------------------------------------------------------------------
+   Watercolor · independent pigment cover with compact vertical rhythm
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="watercolor"] .journal-grid {
+  gap: clamp(54px, 7vw, 96px) clamp(34px, 5vw, 76px);
+}
+
+html[data-memory-style="watercolor"] .trip-card,
+html[data-memory-style="watercolor"] .trip-card:nth-child(n) {
+  margin-top: 0 !important;
+}
+
+html[data-memory-style="watercolor"] .section-shell {
+  margin-block: clamp(54px, 7vw, 96px);
+}
+
+html[data-memory-style="watercolor"] .media-frame {
+  min-height: clamp(370px, 45vw, 650px);
+}
+
+html[data-memory-style="watercolor"] .memory-cover-component-watercolor {
+  background:
+    linear-gradient(0deg, rgba(43,75,75,.44), transparent 48%);
+}
+
+.watercolor-cover-wash {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(11px);
+  mix-blend-mode: multiply;
+}
+
+.watercolor-cover-wash-a {
+  left: -10%;
+  top: 24%;
+  width: 54%;
+  height: 44%;
+  background: rgba(103,174,171,.28);
+}
+
+.watercolor-cover-wash-b {
+  right: -11%;
+  bottom: 14%;
+  width: 55%;
+  height: 40%;
+  background: rgba(190,126,168,.22);
+}
+
+.watercolor-cover-edge {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(255,255,248,.38);
+  border-radius: 57% 43% 52% 48% / 46% 55% 45% 54%;
+  filter: blur(.5px);
+}
+
+.watercolor-cover-number {
+  position: absolute;
+  right: 12%;
+  top: 12%;
+  color: rgba(255,255,249,.72);
+  font: 400 .68rem/1 'Caveat', 'Ma Shan Zheng', cursive;
+}
+
+.watercolor-cover-component strong {
+  position: absolute;
+  left: 50%;
+  bottom: 50px;
+  translate: -50% 0;
+  width: 80%;
+  color: rgba(255,255,249,.91);
+  text-align: center;
+  font: 400 clamp(2rem, 4vw, 4.4rem)/.95 'Ma Shan Zheng', 'Noto Serif SC', cursive;
+  text-shadow: 0 3px 18px rgba(43,74,74,.26);
+}
+
+.watercolor-cover-component small {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  translate: -50% 0;
+  width: 80%;
+  color: rgba(255,255,249,.77);
+  text-align: center;
+  font: 400 .68rem/1 'Caveat', 'Ma Shan Zheng', cursive;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive repair
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 980px) {
+  html[data-memory-style="sketchbook"] .journal-grid,
+  html[data-memory-style="sketchbook"] .archive-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html[data-memory-style="film"] .card-content {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  html:not([data-memory-style="oil"]) .journal-grid,
+  html:not([data-memory-style="oil"]) .archive-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html[data-memory-style="y2k"] .media-frame,
+  html[data-memory-style="film"] .media-frame,
+  html[data-memory-style="sketchbook"] .media-frame,
+  html[data-memory-style="watercolor"] .media-frame {
+    min-height: 330px;
+  }
+
+  .film-cover-ticket,
+  .film-card-stock,
+  .sketch-cover-circle,
+  .sketch-card-stamp {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-theme-component * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

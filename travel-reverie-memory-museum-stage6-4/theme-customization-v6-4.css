@@ -1,0 +1,944 @@
+
+/* ==========================================================================
+   Travel Reverie 6.4
+   Compact journals, synchronized typography, theme-aware color studio,
+   Film route visibility, editable Film board and Y2K atmosphere enrichment.
+   Oil Painting is intentionally excluded from all layout overrides below.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Theme Studio feedback
+   -------------------------------------------------------------------------- */
+
+.theme-capability-note {
+  min-height: 1.25em;
+  margin: 7px 0 2px;
+  font-size: .67rem;
+  line-height: 1.45;
+  opacity: .62;
+}
+
+.theme-panel [data-color-control].is-control-disabled {
+  opacity: .38;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.theme-panel [data-color-control].is-control-disabled input {
+  cursor: not-allowed;
+}
+
+.theme-panel input[type="color"]:disabled {
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Global selected-font synchronization
+   Interface microcopy may retain theme-specific monospace/pixel treatment,
+   while all editorial reading typography follows the Oil font selector.
+   -------------------------------------------------------------------------- */
+
+html:not([data-memory-style="oil"]) :is(
+  body,
+  .brand b,
+  .desktop-nav,
+  .hero-title,
+  .hero-title *,
+  .hero-intro,
+  .eyebrow,
+  .hero-card p,
+  .hero-card strong,
+  .hero-card small,
+  .section-heading h2,
+  .section-heading p,
+  .trip-card h3,
+  .trip-card .country-line,
+  .trip-card .story,
+  .archive-card h3,
+  .archive-card p,
+  .route-head h3,
+  .route-head p,
+  .route-stage h4,
+  .route-stage .route-summary,
+  .route-step .step-label,
+  .closing h2,
+  .closing p
+) {
+  font-family: var(--theme-selected-font, var(--ui-font)) !important;
+}
+
+html:not([data-memory-style="oil"]) :is(
+  .hero-title,
+  .section-heading h2,
+  .trip-card h3,
+  .archive-card h3,
+  .route-head h3,
+  .route-stage h4,
+  .closing h2
+) {
+  font-weight: var(--heading-font-weight, 600) !important;
+  letter-spacing: var(--heading-letter-spacing, -.015em) !important;
+}
+
+/* Keep only real interface fragments in their own visual language. */
+html[data-memory-style="y2k"] :is(
+  .y2k-window,
+  .memory-interface-y2k,
+  .y2k-cover-titlebar,
+  .y2k-cover-folder small,
+  .y2k-cover-label,
+  .y2k-cover-camera,
+  .y2k-card-status,
+  .y2k-card-file
+) {
+  font-family: var(--pixel-font) !important;
+}
+
+html[data-memory-style="film"] :is(
+  .film-opening-credit,
+  .film-timecode,
+  .film-cover-stock,
+  .film-cover-ticket,
+  .film-cover-timecode,
+  .film-cover-frame,
+  .film-card-scene,
+  .film-card-stock,
+  .film-card-number,
+  .film-reference-card figcaption span,
+  .film-image-credit
+) {
+  font-family: var(--space-mono) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Theme scene color vocabulary
+   -------------------------------------------------------------------------- */
+
+html[data-theme-scene="water"] {
+  --memory-scene-a: #b8e0e6;
+  --memory-scene-b: #789cad;
+  --memory-scene-c: #efe4d5;
+}
+
+html[data-theme-scene="moon"] {
+  --memory-scene-a: #8e94bc;
+  --memory-scene-b: #353a66;
+  --memory-scene-c: #d7cce2;
+}
+
+html[data-theme-scene="rose"] {
+  --memory-scene-a: #edb8c7;
+  --memory-scene-b: #b67e92;
+  --memory-scene-c: #f6ddcf;
+}
+
+html[data-theme-scene="gold"] {
+  --memory-scene-a: #e4bf76;
+  --memory-scene-b: #9a7140;
+  --memory-scene-c: #f5e4b7;
+}
+
+html[data-theme-scene="ocean"] {
+  --memory-scene-a: #94d7da;
+  --memory-scene-b: #558ca2;
+  --memory-scene-c: #f2c9d1;
+}
+
+html[data-theme-scene="violet"] {
+  --memory-scene-a: #b49ad2;
+  --memory-scene-b: #6f568e;
+  --memory-scene-c: #e6d7ed;
+}
+
+html[data-theme-scene="lavender"] {
+  --memory-scene-a: #d4b9dc;
+  --memory-scene-b: #9f83b6;
+  --memory-scene-c: #f0dbe3;
+}
+
+html[data-theme-scene="creamrose"] {
+  --memory-scene-a: #e7c8bd;
+  --memory-scene-b: #b88c87;
+  --memory-scene-c: #f3e6cf;
+}
+
+/* Y2K: vivid but still soft. */
+html[data-memory-style="y2k"] body {
+  color: var(--ink);
+  background:
+    radial-gradient(
+      circle at 14% 14%,
+      color-mix(in srgb, var(--memory-scene-a) 58%, white),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 86% 20%,
+      color-mix(in srgb, var(--accent) 48%, var(--memory-scene-c)),
+      transparent 27%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--paper) 36%, #dff8ff),
+      color-mix(in srgb, var(--memory-scene-a) 38%, #f7e8ff) 52%,
+      color-mix(in srgb, var(--memory-scene-c) 45%, #fff4c9)
+    ) !important;
+}
+
+html[data-memory-style="y2k"] .hero {
+  color: color-mix(in srgb, var(--title-color) 28%, #30385e);
+  background:
+    linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--paper) 42%, #ddf8ff),
+      color-mix(in srgb, var(--memory-scene-a) 32%, #f6e7ff) 52%,
+      color-mix(in srgb, var(--memory-scene-c) 42%, #fff1c4)
+    ) !important;
+  background-size: 26px 26px, 26px 26px, auto !important;
+}
+
+html[data-memory-style="y2k"] :is(.section-shell, .trip-card, .archive-card) {
+  border-color: color-mix(in srgb, var(--accent) 58%, #6674a5) !important;
+}
+
+html[data-memory-style="y2k"] .section-shell {
+  background:
+    linear-gradient(color-mix(in srgb, var(--accent) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 7%, transparent) 1px, transparent 1px),
+    color-mix(in srgb, var(--paper) 72%, rgba(249,253,255,.90)) !important;
+  background-size: 22px 22px !important;
+}
+
+html[data-memory-style="y2k"] :is(
+  .hero-title,
+  .section-heading h2,
+  .trip-card h3,
+  .archive-card h3
+) {
+  color: color-mix(in srgb, var(--title-color) 28%, #30385e) !important;
+}
+
+html[data-memory-style="y2k"] :is(.primary-button, .pill-button) {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 80%, #ff76b4),
+      color-mix(in srgb, var(--memory-scene-a) 70%, #78d4f5)
+    ) !important;
+}
+
+/* Film: dark base remains coherent; selected title/ink/accent still work. */
+html[data-memory-style="film"] body {
+  color: color-mix(in srgb, var(--ink) 24%, #eadfc9);
+  background:
+    radial-gradient(
+      circle at 70% 13%,
+      color-mix(in srgb, var(--accent) 35%, transparent),
+      transparent 29%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--memory-scene-b) 22%, #1d1713),
+      color-mix(in srgb, var(--memory-scene-a) 14%, #3a2e26) 52%,
+      #181310
+    ) !important;
+}
+
+html[data-memory-style="film"] :is(
+  .hero-title,
+  .section-heading h2,
+  .trip-card h3,
+  .archive-card h3,
+  .route-stage h4
+) {
+  color: var(--title-color) !important;
+}
+
+html[data-memory-style="film"] :is(
+  .film-timecode,
+  .film-cover-stock,
+  .film-cover-timecode,
+  .film-card-scene,
+  .film-reference-card figcaption span,
+  .film-image-credit
+) {
+  color: color-mix(in srgb, var(--accent) 74%, #d77c51) !important;
+}
+
+html[data-memory-style="film"] :is(.section-shell, .route-sidebar) {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--memory-scene-b) 17%, rgba(42,34,29,.96)),
+      color-mix(in srgb, var(--ink) 5%, rgba(24,20,17,.97))
+    ) !important;
+}
+
+/* Sketchbook: selected paper/ink/accent become real stationery choices. */
+html[data-memory-style="sketchbook"] body {
+  color: var(--ink);
+  background:
+    linear-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px),
+    color-mix(in srgb, var(--paper) 72%, var(--memory-scene-c)) !important;
+  background-size: 24px 24px !important;
+}
+
+html[data-memory-style="sketchbook"] :is(.hero, .section-shell, .trip-card, .archive-card) {
+  color: var(--ink) !important;
+  background-color: color-mix(in srgb, var(--paper) 84%, #f5efdf) !important;
+  border-color: color-mix(in srgb, var(--ink) 24%, transparent) !important;
+}
+
+html[data-memory-style="sketchbook"] :is(
+  .hero-title,
+  .section-heading h2,
+  .trip-card h3,
+  .archive-card h3,
+  .route-stage h4
+) {
+  color: color-mix(in srgb, var(--title-color) 24%, #344b55) !important;
+}
+
+html[data-memory-style="sketchbook"] :is(
+  .sketch-note,
+  .sketch-cover-note,
+  .sketch-card-arrow,
+  .journal-world-index
+) {
+  color: var(--accent) !important;
+}
+
+/* Watercolor: user colors become transparent pigment rather than hard blocks. */
+html[data-memory-style="watercolor"] body {
+  color: var(--ink);
+  background:
+    radial-gradient(
+      ellipse at 14% 16%,
+      color-mix(in srgb, var(--accent) 38%, var(--memory-scene-a)),
+      transparent 31%
+    ),
+    radial-gradient(
+      ellipse at 84% 20%,
+      color-mix(in srgb, var(--title-color) 24%, var(--memory-scene-c)),
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 52% 80%,
+      color-mix(in srgb, var(--paper) 42%, var(--memory-scene-a)),
+      transparent 35%
+    ),
+    color-mix(in srgb, var(--paper) 76%, #eef3ee) !important;
+}
+
+html[data-memory-style="watercolor"] :is(
+  .hero-title,
+  .section-heading h2,
+  .trip-card h3,
+  .archive-card h3,
+  .route-stage h4
+) {
+  color: color-mix(in srgb, var(--title-color) 24%, #4a6c6d) !important;
+}
+
+html[data-memory-style="watercolor"] :is(.section-shell, .route-sidebar, .archive-card) {
+  background:
+    radial-gradient(
+      ellipse at 12% 18%,
+      color-mix(in srgb, var(--accent) 24%, transparent),
+      transparent 31%
+    ),
+    color-mix(in srgb, var(--paper) 70%, rgba(250,250,244,.55)) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Real compact journal cards
+   The writing panel is removed from layout until the user expands the card.
+   -------------------------------------------------------------------------- */
+
+html:not([data-memory-style="oil"]) .trip-card.is-memory-collapsed .card-content {
+  display: none !important;
+}
+
+html:not([data-memory-style="oil"]) .trip-card.is-memory-expanded .card-content {
+  display: flex !important;
+}
+
+.memory-compact-summary {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  padding: 58px 18px 17px;
+  pointer-events: auto;
+}
+
+.trip-card.is-memory-expanded .memory-compact-summary {
+  display: none !important;
+}
+
+.memory-compact-copy {
+  min-width: 0;
+}
+
+.memory-compact-copy span,
+.memory-compact-copy strong,
+.memory-compact-copy small {
+  display: block;
+}
+
+.memory-compact-copy .memory-compact-meta {
+  margin-bottom: 6px;
+  font-size: .50rem;
+  line-height: 1.25;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .76;
+}
+
+.memory-compact-copy strong {
+  overflow: hidden;
+  font-family: var(--theme-selected-font, var(--display-font)) !important;
+  font-size: clamp(1.45rem, 2.35vw, 2.55rem);
+  font-weight: var(--heading-font-weight, 600);
+  line-height: .92;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-compact-copy small {
+  margin-top: 5px;
+  overflow: hidden;
+  font-size: .62rem;
+  line-height: 1.35;
+  opacity: .78;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-compact-actions {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.memory-card-toggle-compact,
+.memory-compact-edit {
+  flex: 0 0 auto;
+  min-width: 36px;
+  min-height: 34px;
+  margin: 0 !important;
+}
+
+.memory-compact-edit {
+  display: grid;
+  place-items: center;
+  padding: 7px 10px;
+  border: 1px solid currentColor;
+  color: inherit;
+  background: transparent;
+  font-size: .86rem;
+}
+
+.memory-card-toggle-expanded {
+  align-self: flex-start;
+  margin-top: 18px !important;
+}
+
+html[data-memory-style="y2k"] .memory-compact-summary {
+  color: #fff;
+  background:
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--ink) 68%, #30375d),
+      color-mix(in srgb, var(--accent) 22%, transparent) 70%,
+      transparent
+    );
+}
+
+html[data-memory-style="y2k"] .memory-compact-summary :is(
+  .memory-card-toggle,
+  .memory-compact-edit
+) {
+  border-radius: 3px;
+  color: #34416d;
+  background: color-mix(in srgb, var(--paper) 72%, white);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--accent) 24%, transparent);
+  font-family: var(--pixel-font) !important;
+}
+
+html[data-memory-style="film"] .memory-compact-summary {
+  color: color-mix(in srgb, var(--ink) 15%, #fff0d5);
+  background:
+    linear-gradient(
+      0deg,
+      rgba(12, 8, 6, .95),
+      rgba(12, 8, 6, .72) 58%,
+      transparent
+    );
+}
+
+html[data-memory-style="film"] .memory-compact-summary :is(
+  .memory-card-toggle,
+  .memory-compact-edit
+) {
+  border-radius: 0;
+  color: color-mix(in srgb, var(--accent) 55%, #ead4b6);
+  background: rgba(29, 23, 19, .84);
+}
+
+html[data-memory-style="sketchbook"] .memory-compact-summary {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 50px 16px 14px;
+  color: var(--ink);
+  background:
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--paper) 92%, #f7efdc),
+      color-mix(in srgb, var(--paper) 78%, transparent) 68%,
+      transparent
+    );
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  transform: rotate(-.35deg);
+}
+
+html[data-memory-style="sketchbook"] .memory-compact-summary :is(
+  .memory-card-toggle,
+  .memory-compact-edit
+) {
+  border-radius: 2px 7px 3px 6px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 88%, #f5eedc);
+  font-family: var(--theme-selected-font) !important;
+}
+
+html[data-memory-style="watercolor"] .memory-compact-summary {
+  left: 5%;
+  right: 5%;
+  bottom: 5%;
+  padding: 62px 20px 18px;
+  color: color-mix(in srgb, var(--ink) 42%, #fff);
+  text-align: center;
+  background:
+    radial-gradient(
+      ellipse at center bottom,
+      color-mix(in srgb, var(--accent) 28%, rgba(45,76,76,.72)),
+      rgba(42,70,70,.34) 52%,
+      transparent 74%
+    );
+}
+
+html[data-memory-style="watercolor"] .memory-compact-summary {
+  grid-template-columns: 1fr;
+}
+
+html[data-memory-style="watercolor"] .memory-compact-actions {
+  justify-content: center;
+}
+
+html[data-memory-style="watercolor"] .memory-compact-summary :is(
+  .memory-card-toggle,
+  .memory-compact-edit
+) {
+  border-radius: 48% 52% 45% 55% / 55% 44% 56% 45%;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 78%, rgba(249,249,243,.76));
+}
+
+/* Compact cards are now only their covers. */
+html[data-memory-style="y2k"] .trip-card.is-memory-collapsed .media-frame {
+  min-height: 260px !important;
+}
+
+html[data-memory-style="film"] .trip-card.is-memory-collapsed .media-frame {
+  min-height: 320px !important;
+  aspect-ratio: 4 / 3;
+}
+
+html[data-memory-style="sketchbook"] .trip-card.is-memory-collapsed .media-frame {
+  min-height: 320px !important;
+}
+
+html[data-memory-style="watercolor"] .trip-card.is-memory-collapsed .media-frame {
+  min-height: 340px !important;
+}
+
+/* --------------------------------------------------------------------------
+   Film compact route bug
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="film"] .route-stage.is-compact {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 116px !important;
+  padding: 17px 18px !important;
+  overflow: visible !important;
+  color: color-mix(in srgb, var(--ink) 16%, #eadbc2) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 10%, rgba(55,44,36,.86)),
+      rgba(31,25,21,.92)
+    ) !important;
+}
+
+html[data-memory-style="film"] .route-stage.is-compact h4,
+html[data-memory-style="film"] .route-stage.is-compact .route-summary {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  clip-path: none !important;
+  filter: none !important;
+}
+
+html[data-memory-style="film"] .route-stage.is-compact h4 {
+  margin: 0 0 9px !important;
+  color: var(--title-color) !important;
+}
+
+html[data-memory-style="film"] .route-stage.is-compact .route-summary {
+  margin: 0 !important;
+  color: color-mix(in srgb, var(--ink) 16%, #d8c4a8) !important;
+  font-size: .72rem;
+  line-height: 1.65;
+}
+
+/* --------------------------------------------------------------------------
+   Editable Film reference board
+   -------------------------------------------------------------------------- */
+
+.film-reference-card {
+  isolation: isolate;
+}
+
+.film-reference-edit-controls {
+  position: absolute;
+  z-index: 12;
+  right: 14px;
+  top: 20px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity .24s ease, transform .24s ease;
+}
+
+.film-reference-card:hover .film-reference-edit-controls,
+.film-reference-card:focus-within .film-reference-edit-controls {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.film-reference-edit-controls button {
+  min-height: 29px;
+  padding: 6px 8px;
+  border: 1px solid rgba(244,221,186,.48);
+  border-radius: 0;
+  color: #f2dfbd;
+  background: rgba(25,19,16,.82);
+  font: 400 .40rem/1 var(--space-mono);
+  letter-spacing: .05em;
+}
+
+.film-reference-edit-controls button:hover {
+  color: white;
+  background: color-mix(in srgb, var(--accent) 42%, rgba(25,19,16,.94));
+}
+
+.film-reference-edit-controls button:disabled {
+  opacity: .45;
+  cursor: wait;
+}
+
+.film-reference-card.is-custom-film-image::after {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 56%, transparent);
+}
+
+.film-reference-card.is-custom-film-image .film-reference-edit-controls::before {
+  content: "CUSTOM";
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  color: color-mix(in srgb, var(--accent) 72%, #f2dfbd);
+  font: 400 .36rem/1 var(--space-mono);
+  letter-spacing: .06em;
+}
+
+/* --------------------------------------------------------------------------
+   Sketchbook Hero destination card visibility
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="sketchbook"] .hero-card {
+  box-sizing: border-box;
+  width: min(360px, calc(100% - 50px)) !important;
+  min-width: 270px;
+  min-height: 300px !important;
+  margin: clamp(22px, 4vw, 58px) !important;
+  padding: 54px 36px 34px !important;
+  overflow: visible !important;
+}
+
+html[data-memory-style="sketchbook"] .hero-card p,
+html[data-memory-style="sketchbook"] .hero-card strong,
+html[data-memory-style="sketchbook"] .hero-card small {
+  position: relative;
+  z-index: 3;
+  max-width: 100%;
+}
+
+html[data-memory-style="sketchbook"] .hero-card p {
+  margin-top: 28px !important;
+  line-height: 1.45;
+}
+
+html[data-memory-style="sketchbook"] .hero-card strong {
+  margin-top: 10px;
+  font-size: clamp(4.3rem, 7vw, 6.8rem) !important;
+  line-height: .82 !important;
+  white-space: nowrap;
+}
+
+html[data-memory-style="sketchbook"] .hero-card small {
+  margin-top: 14px;
+  line-height: 1.5;
+  overflow: visible;
+}
+
+/* --------------------------------------------------------------------------
+   Y2K top-layer emoji enrichment
+   -------------------------------------------------------------------------- */
+
+html[data-memory-style="y2k"] .hero > .y2k-emoji-atmosphere {
+  z-index: 80 !important;
+}
+
+html[data-memory-style="y2k"] .hero > .y2k-emoji-atmosphere :is(
+  .y2k-emoji,
+  .y2k-kaomoji
+) {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.y2k-emoji-strawberry {
+  left: 1.2%;
+  top: 6%;
+  --emoji-duration: 8.9s;
+  rotate: -7deg;
+}
+
+.y2k-emoji-disc {
+  right: 10%;
+  bottom: 17%;
+  --emoji-duration: 10.2s;
+  rotate: 7deg;
+}
+
+.y2k-emoji-camera {
+  left: 1.2%;
+  top: 29%;
+  --emoji-duration: 7.6s;
+  rotate: -4deg;
+}
+
+.y2k-emoji-headphones {
+  right: 1.2%;
+  top: 73%;
+  --emoji-duration: 9.6s;
+  rotate: 6deg;
+}
+
+.y2k-emoji-candy {
+  right: 1.2%;
+  top: 5%;
+  --emoji-duration: 8.1s;
+  rotate: 8deg;
+}
+
+.y2k-emoji-bubbles {
+  left: 10%;
+  bottom: 2%;
+  --emoji-duration: 11.2s;
+}
+
+.y2k-emoji-blueheart {
+  right: 31%;
+  bottom: 3%;
+  --emoji-duration: 7.8s;
+  rotate: -6deg;
+}
+
+.y2k-emoji-rabbit {
+  left: 1.2%;
+  bottom: 5%;
+  --emoji-duration: 10.6s;
+  rotate: 4deg;
+}
+
+.y2k-kaomoji-c {
+  right: 1.2%;
+  top: 19%;
+  --emoji-duration: 10.8s;
+  rotate: -1deg;
+}
+
+.y2k-kaomoji-d {
+  left: 1.2%;
+  top: 67%;
+  --emoji-duration: 9.4s;
+  rotate: 2deg;
+}
+
+/* Section-edge emoji traces; intentionally outside reading columns. */
+html[data-memory-style="y2k"] .section-shell {
+  overflow: visible !important;
+}
+
+html[data-memory-style="y2k"] .y2k-section-emoji-layer {
+  display: block;
+}
+
+.y2k-section-emoji-layer {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.y2k-section-emoji {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  min-height: 34px;
+  font-size: clamp(1rem, 1.7vw, 1.55rem);
+  filter:
+    drop-shadow(0 4px 7px rgba(74,91,145,.17))
+    drop-shadow(0 0 0 white);
+  animation: y2k-emoji-float var(--section-emoji-duration, 8s) ease-in-out infinite;
+}
+
+.y2k-section-emoji:nth-child(1) {
+  left: -16px;
+  top: 9%;
+  --section-emoji-duration: 8.6s;
+  rotate: -7deg;
+}
+
+.y2k-section-emoji:nth-child(2) {
+  right: -16px;
+  top: 23%;
+  --section-emoji-duration: 10.3s;
+  rotate: 7deg;
+}
+
+.y2k-section-emoji:nth-child(3) {
+  left: 4%;
+  bottom: -15px;
+  --section-emoji-duration: 9.4s;
+  rotate: -4deg;
+}
+
+.y2k-section-emoji:nth-child(4) {
+  right: 8%;
+  bottom: -15px;
+  --section-emoji-duration: 11s;
+  rotate: 5deg;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 980px) {
+  html[data-memory-style="sketchbook"] .hero-card {
+    width: min(390px, 100%) !important;
+    min-width: 0;
+    margin: 38px 0 0 !important;
+  }
+
+  .memory-compact-summary {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .memory-compact-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .memory-compact-actions {
+    justify-content: flex-start;
+  }
+
+  .memory-compact-copy strong {
+    white-space: normal;
+  }
+
+  .film-reference-edit-controls {
+    top: 18px;
+    opacity: 1;
+    transform: none;
+  }
+
+  .y2k-section-emoji-layer {
+    display: none;
+  }
+
+  .y2k-emoji-strawberry,
+  .y2k-emoji-disc,
+  .y2k-emoji-candy,
+  .y2k-emoji-bubbles,
+  .y2k-emoji-blueheart,
+  .y2k-emoji-rabbit,
+  .y2k-kaomoji-c,
+  .y2k-kaomoji-d {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .y2k-section-emoji {
+    animation: none !important;
+  }
+}
+
+
+.film-reference-card.is-custom-film-image .film-image-credit {
+  display: none !important;
+}
+
+.film-reference-card.is-custom-film-image figcaption::after {
+  content: "自定义图片 · 已保存在当前浏览器";
+  display: block;
+  margin-top: 7px;
+  color: color-mix(in srgb, var(--accent) 72%, #f2dfbd);
+  font: 400 .38rem/1.35 var(--space-mono);
+  letter-spacing: .04em;
+}
+
+
+/* Prevent intrinsic-size placeholders from looking like empty journal space. */
+html:not([data-memory-style="oil"]) .journal-shell {
+  content-visibility: visible !important;
+  contain-intrinsic-size: auto !important;
+}
+
+/* Anchor edge decorations to their own sections rather than the page. */
+html[data-memory-style="y2k"] .section-shell {
+  position: relative;
+}
