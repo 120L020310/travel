@@ -1,0 +1,108 @@
+{
+  "build": "6.4-compact-journal-theme-sync",
+  "javascript": {
+    "app-v6-4.js": {
+      "passed": true,
+      "stderr": ""
+    },
+    "memory-components-v6-4.js": {
+      "passed": true,
+      "stderr": ""
+    },
+    "film-board-editor-v6-4.js": {
+      "passed": true,
+      "stderr": ""
+    },
+    "experience-v6-4.js": {
+      "passed": true,
+      "stderr": ""
+    }
+  },
+  "html": {
+    "duplicateIds": [],
+    "missingLocalResources": []
+  },
+  "css": {
+    "style-v6-4.css": {
+      "braceBalance": true,
+      "parseErrors": []
+    },
+    "memory-worlds-v6-4.css": {
+      "braceBalance": true,
+      "parseErrors": []
+    },
+    "theme-repair-v6-4.css": {
+      "braceBalance": true,
+      "parseErrors": []
+    },
+    "journal-fold-v6-4.css": {
+      "braceBalance": true,
+      "parseErrors": []
+    },
+    "theme-customization-v6-4.css": {
+      "braceBalance": true,
+      "parseErrors": []
+    }
+  },
+  "filmImages": {
+    "budapest-danube-night.webp": {
+      "size": [
+        1200,
+        800
+      ],
+      "bytes": 163446
+    },
+    "naples-night-street.webp": {
+      "size": [
+        1200,
+        800
+      ],
+      "bytes": 80520
+    },
+    "paris-alexandre-iii.webp": {
+      "size": [
+        1200,
+        800
+      ],
+      "bytes": 122816
+    },
+    "paris-montmartre.webp": {
+      "size": [
+        1200,
+        800
+      ],
+      "bytes": 249176
+    },
+    "paris-shakespeare-company.webp": {
+      "size": [
+        1200,
+        800
+      ],
+      "bytes": 148816
+    },
+    "vienna-night.webp": {
+      "size": [
+        1200,
+        800
+      ],
+      "bytes": 111692
+    }
+  },
+  "checks": {
+    "buildMarker": true,
+    "compactSummaryComponent": true,
+    "collapsedWritingPanelRemoved": true,
+    "fontSynced": true,
+    "themeColorCapabilities": true,
+    "filmPaperLocked": true,
+    "filmRouteCompactVisible": true,
+    "filmBoardEditable": true,
+    "filmSlots": true,
+    "sketchHeroFixed": true,
+    "moreY2KEmoji": true,
+    "y2KTopLayer": true,
+    "oilStillExcluded": true,
+    "noInvalidGlobeAnimateIn": true
+  },
+  "browserVisualTest": "A system Chromium executable is present, but local HTTP navigation is blocked by the runtime with ERR_BLOCKED_BY_ADMINISTRATOR. Static JavaScript, CSS, HTML-resource and image-integrity checks passed."
+}
