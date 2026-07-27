@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.3-direct-route-scroll";
-  console.info("[Travel Reverie] build 7.3-direct-route-scroll loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.4-fixed-trip-scrollers";
+  console.info("[Travel Reverie] build 7.4-fixed-trip-scrollers loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -331,8 +331,6 @@
       globe:["#86a6aa", "#284044", .14]
     }
   });
-  const ROUTE_PREVIEW_COUNT = 3;
-
   const MEMORY_THEME_CAPABILITIES = Object.freeze({
     oil: Object.freeze({
       titleColor:true, inkColor:true, accentColor:true, paperColor:true
@@ -487,7 +485,6 @@
   let currentMapDestinationId = "";
   let revealObserver;
   let mediaVisibilityObserver;
-  let routeExpanded = false;
   let routeEditorDraft = null;
   let activeRouteStopId = "";
   let routeGeocodeCandidates = [];
@@ -1260,9 +1257,7 @@
 
   function renderRouteTimeline() {
     const box = $("#routeTimeline");
-    const toggle = $("#routeToggle");
     box.innerHTML = "";
-    const startIndex = routeExpanded ? 0 : Math.max(0, state.routeTrips.length - ROUTE_PREVIEW_COUNT);
 
     if (!state.routeTrips.length) {
       box.innerHTML = `
@@ -1276,12 +1271,10 @@
     state.routeTrips.forEach((trip, tripIndex) => {
       const color = routeColor(tripIndex);
       const panel = document.createElement("section");
-      const hidden = !routeExpanded && tripIndex < startIndex;
       const dateLabel = routeDateLabel(trip);
       panel.className = [
         "route-stage",
-        trip.current ? "current-stage" : "",
-        hidden ? "is-route-hidden" : ""
+        trip.current ? "current-stage" : ""
       ].filter(Boolean).join(" ");
 
       panel.innerHTML = `
@@ -1314,14 +1307,6 @@
       $(".route-card-edit", panel).addEventListener("click", () => openRouteDialog(trip.id));
       box.appendChild(panel);
     });
-
-    if (toggle) {
-      const hiddenCount = Math.max(0, state.routeTrips.length - ROUTE_PREVIEW_COUNT);
-      toggle.hidden = hiddenCount === 0;
-      toggle.setAttribute("aria-expanded", String(routeExpanded));
-      const label = $("span", toggle);
-      if (label) label.textContent = routeExpanded ? t("collapseRoutes") : `${t("expandRoutes")} · ${hiddenCount}`;
-    }
   }
 
   function emptyRouteTrip() {
@@ -2928,10 +2913,6 @@
     $("#searchInput").addEventListener("input", renderJournal); $("#countryFilter").addEventListener("change", renderJournal); $("#typeFilter").addEventListener("change", renderJournal);
     $("#map2dBtn").addEventListener("click", () => setMapMode("2d"));
     $("#map3dBtn").addEventListener("click", () => setMapMode("3d"));
-    $("#routeToggle").addEventListener("click", () => {
-      routeExpanded = !routeExpanded;
-      renderRouteTimeline();
-    });
     $("#fitMapBtn").addEventListener("click", fitAllFootprints);
     $("#tripDialog").addEventListener("click", e => { const rect=$("#tripDialog").getBoundingClientRect(); if (e.clientX<rect.left || e.clientX>rect.right || e.clientY<rect.top || e.clientY>rect.bottom) closeTripDialog(); });
     $("#routeDialog").addEventListener("click", e => { const rect=$("#routeDialog").getBoundingClientRect(); if (e.clientX<rect.left || e.clientX>rect.right || e.clientY<rect.top || e.clientY>rect.bottom) closeRouteDialog(); });

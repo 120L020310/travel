@@ -1576,28 +1576,42 @@ dialog,
 }
 
 .route-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
   flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  padding-right: 5px;
+  scrollbar-color: rgba(83,75,84,.5) rgba(255,255,255,.28);
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  padding: 1px 7px 1px 1px;
 }
 
 .route-timeline::-webkit-scrollbar {
-  width: 6px;
+  width: 9px;
+}
+
+.route-timeline::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255,255,255,.28);
 }
 
 .route-timeline::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(83,75,84,.22);
-}
-
-.route-stage.is-route-hidden {
-  display: none;
+  background: rgba(83,75,84,.5);
+  border: 2px solid rgba(255,255,255,.44);
 }
 
 .route-stage {
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 326px;
+  flex-direction: column;
+  height: 326px;
   position: relative;
   overflow: hidden;
   padding: 18px;
@@ -1700,8 +1714,10 @@ dialog,
 
 .route-stage .route-steps {
   display: grid;
+  flex: 1 1 auto;
   gap: 8px;
-  max-height: min(42vh, 350px);
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -1850,7 +1866,8 @@ dialog,
   .route-card-controls { gap:6px; }
   .route-card-edit { min-height:42px; padding:7px 8px; font-size:.67rem; }
   .route-stop-count { min-width:42px; min-height:42px; }
-  .route-stage .route-steps { max-height:300px; }
+  .route-stage { flex-basis:300px; height:300px; }
+  .route-stage .route-steps { max-height:none; }
   .route-dialog { width:calc(100vw - 14px); }
   .route-stop-editor,
   .route-stop-fields { padding:14px; }
