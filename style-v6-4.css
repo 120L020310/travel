@@ -1645,6 +1645,47 @@ dialog,
   display: none;
 }
 
+/* Route editor: route trips own their stop snapshots and are edited separately
+   from travel journal pages. */
+.route-head > .tiny-button { margin: 2px 0 2px; }
+.route-stage-actions { display:flex; justify-content:flex-end; margin-top:12px; }
+.route-dialog { width:min(920px, calc(100vw - 26px)); }
+.route-current-field > span { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 11px; border:1px solid rgba(72,63,74,.16); border-radius:12px; background:rgba(255,255,255,.48); }
+.route-current-field input { width:auto !important; }
+.route-stop-editor,
+.route-stop-fields { margin-top:20px; padding:17px; border:1px solid rgba(72,63,74,.12); border-radius:22px 15px 21px 14px; background:rgba(255,255,255,.28); }
+.route-editor-section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:13px; }
+.route-editor-section-head small { display:block; color:rgba(54,49,54,.55); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; }
+.route-editor-section-head h3 { margin:4px 0 0; font:600 1.45rem/1 var(--display-font); }
+.route-stop-list { display:grid; gap:8px; max-height:260px; overflow:auto; padding-right:3px; }
+.route-stop-row { display:grid; grid-template-columns:minmax(0, 1fr) auto auto auto; align-items:center; gap:7px; padding:9px 10px 9px 12px; border:1px solid rgba(72,63,74,.1); border-radius:14px; background:rgba(255,255,255,.48); }
+.route-stop-row.is-active { border-color:var(--accent-color); background:rgba(255,255,255,.74); box-shadow:0 4px 14px rgba(62,53,61,.08); }
+.route-stop-select { min-width:0; padding:0; border:0; color:inherit; text-align:left; background:transparent; }
+.route-stop-select b,
+.route-stop-select span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.route-stop-select b { font-size:.84rem; }
+.route-stop-select span { margin-top:2px; color:rgba(54,49,54,.56); font-size:.67rem; }
+.route-stop-move { width:29px; height:29px; padding:0; border:1px solid rgba(72,63,74,.12); border-radius:9px; color:inherit; background:rgba(255,255,255,.58); }
+.route-stop-move:disabled { cursor:not-allowed; opacity:.32; }
+.route-geocode-results { display:grid; gap:7px; margin:-4px 0 13px; }
+.route-geocode-result { width:100%; padding:10px 12px; border:1px solid rgba(72,63,74,.12); border-radius:12px; color:inherit; text-align:left; background:rgba(255,255,255,.48); }
+.route-geocode-result:hover { background:rgba(255,255,255,.78); }
+.route-geocode-result b,
+.route-geocode-result span { display:block; }
+.route-geocode-result b { font-size:.78rem; }
+.route-geocode-result span { margin-top:3px; font-size:.67rem; line-height:1.45; opacity:.62; }
+.route-stop-save-row { display:flex; justify-content:flex-end; margin-top:14px; }
+.route-dialog-actions { margin-top:20px; }
+
+@media (max-width: 620px) {
+  .route-dialog { width:calc(100vw - 14px); }
+  .route-stop-editor,
+  .route-stop-fields { padding:14px; }
+  .route-stop-row { grid-template-columns:minmax(0, 1fr) auto auto; }
+  .route-stop-row > .route-stop-move:last-child { grid-column:2; }
+  .route-editor-section-head { align-items:center; }
+}
+
 @media (max-width: 1100px) {
   .route-sidebar {
     height: auto;

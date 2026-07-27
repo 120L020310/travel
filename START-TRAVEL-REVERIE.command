@@ -9,9 +9,9 @@ if lsof -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then
   exit 1
 fi
 
-(sleep 1.0; open "http://localhost:$PORT/?build=6.4-compact-journal-theme-sync") &
-echo "Travel Reverie 6.4 is running at:"
-echo "http://localhost:$PORT/?build=6.4-compact-journal-theme-sync"
+(sleep 1.0; open "http://localhost:$PORT/?build=7.1-route-editor") &
+echo "Travel Reverie 7.1 is running at:"
+echo "http://localhost:$PORT/?build=7.1-route-editor"
 echo
 echo "Keep this window open. Press Control+C to stop."
 python3 -m http.server "$PORT"

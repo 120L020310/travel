@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.0-independent-browser-data";
-  console.info("[Travel Reverie] build 7.0-independent-browser-data loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.1-independent-route-editor";
+  console.info("[Travel Reverie] build 7.1-independent-route-editor loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -465,7 +465,7 @@
   };
 
   let state = loadState();
-  let map, routeLayer, markerLayer, cityLayer, originLayer, globe, currentMapMode = "2d";
+  let map, routeLayer, markerLayer, cityLayer, globe, currentMapMode = "2d";
   let mediaUrls = [];
   let dbPromise;
   let painting;
@@ -488,6 +488,9 @@
   let revealObserver;
   let mediaVisibilityObserver;
   let routeExpanded = false;
+  let routeEditorDraft = null;
+  let activeRouteStopId = "";
+  let routeGeocodeCandidates = [];
   let mapStabilizeFrame = 0;
   let mapStabilizeTimer = 0;
   let firstTileReady = false;
@@ -1294,6 +1297,15 @@
       } else {
         globalIndex += trip.stops.length;
       }
+      const actions = document.createElement("div");
+      actions.className = "route-stage-actions";
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "tiny-button";
+      edit.textContent = "编辑路线";
+      edit.addEventListener("click", () => openRouteDialog(trip.id));
+      actions.appendChild(edit);
+      panel.appendChild(actions);
       box.appendChild(panel);
     });
 
@@ -1304,6 +1316,280 @@
       const label = $("span", toggle);
       if (label) label.textContent = routeExpanded ? t("collapseRoutes") : `${t("expandRoutes")} · ${hiddenCount}`;
     }
+  }
+
+  function emptyRouteTrip() {
+    return {
+      id: `route-trip-${crypto.randomUUID()}`,
+      title: "",
+      note: "",
+      start: "",
+      end: "",
+      current: false,
+      stops: []
+    };
+  }
+
+  function resetRouteGeocodeResults(message = "输入地点、国家或地址后搜索；也可手动填写坐标。") {
+    routeGeocodeCandidates = [];
+    $("#routeGeocodeResults").innerHTML = "";
+    $("#routeGeocodeStatus").textContent = message;
+  }
+
+  function clearRouteStopFields() {
+    activeRouteStopId = "";
+    $("#routeStopId").value = "";
+    $("#routeStopName").value = "";
+    $("#routeStopCountry").value = "";
+    $("#routeStopAddress").value = "";
+    $("#routeStopLat").value = "";
+    $("#routeStopLng").value = "";
+    $("#routeStopNote").value = "";
+    $("#routeStopFieldsHeading").textContent = "添加地点";
+    $("#deleteRouteStop").classList.add("hidden");
+    resetRouteGeocodeResults();
+  }
+
+  function populateRouteStopFields(stop) {
+    activeRouteStopId = stop.id;
+    $("#routeStopId").value = stop.id;
+    $("#routeStopName").value = stop.name || "";
+    $("#routeStopCountry").value = stop.country || "";
+    $("#routeStopAddress").value = stop.address || "";
+    $("#routeStopLat").value = stop.lat ?? "";
+    $("#routeStopLng").value = stop.lng ?? "";
+    $("#routeStopNote").value = stop.note || "";
+    $("#routeStopFieldsHeading").textContent = "编辑地点";
+    $("#deleteRouteStop").classList.remove("hidden");
+    resetRouteGeocodeResults();
+  }
+
+  function routeStopFormHasContent() {
+    return [
+      "#routeStopName", "#routeStopCountry", "#routeStopAddress",
+      "#routeStopLat", "#routeStopLng", "#routeStopNote"
+    ].some(selector => String($(selector).value || "").trim());
+  }
+
+  function saveActiveRouteStop({ quiet = false } = {}) {
+    if (!routeEditorDraft) return false;
+    const name = $("#routeStopName").value.trim();
+    if (!name && !routeStopFormHasContent()) return true;
+    if (!name) {
+      if (!quiet) alert("请至少填写地点名称，再保存地点。");
+      return false;
+    }
+
+    const existingIndex = routeEditorDraft.stops.findIndex(stop => stop.id === activeRouteStopId);
+    const existing = existingIndex >= 0 ? routeEditorDraft.stops[existingIndex] : null;
+    const snapshot = makeRouteStopSnapshot({
+      name,
+      country: $("#routeStopCountry").value.trim(),
+      address: $("#routeStopAddress").value.trim(),
+      lat: $("#routeStopLat").value === "" ? null : Number($("#routeStopLat").value),
+      lng: $("#routeStopLng").value === "" ? null : Number($("#routeStopLng").value),
+      note: $("#routeStopNote").value.trim(),
+      provider: existing?.provider || "",
+      providerPlaceId: existing?.providerPlaceId || ""
+    }, routeEditorDraft.id, Math.max(0, existingIndex), { kind:existing?.kind || "place" });
+    snapshot.id = existing?.id || `route-stop-${crypto.randomUUID()}`;
+    snapshot.placeKey = routePlaceKey(snapshot);
+
+    if (existingIndex >= 0) routeEditorDraft.stops.splice(existingIndex, 1, snapshot);
+    else routeEditorDraft.stops.push(snapshot);
+    activeRouteStopId = snapshot.id;
+    $("#routeStopId").value = snapshot.id;
+    $("#routeStopFieldsHeading").textContent = "编辑地点";
+    $("#deleteRouteStop").classList.remove("hidden");
+    renderRouteStopList();
+    return true;
+  }
+
+  function renderRouteStopList() {
+    const box = $("#routeStopList");
+    box.innerHTML = "";
+    const stops = routeEditorDraft?.stops || [];
+    if (!stops.length) {
+      const empty = document.createElement("p");
+      empty.className = "route-stop-empty";
+      empty.textContent = "还没有地点。添加起点、途经地或终点后，地图会立即使用这条路线。";
+      box.appendChild(empty);
+      return;
+    }
+    stops.forEach((stop, index) => {
+      const row = document.createElement("div");
+      row.className = `route-stop-row${stop.id === activeRouteStopId ? " is-active" : ""}`;
+      row.innerHTML = `
+        <button type="button" class="route-stop-select"><b>${index + 1}. ${escapeHTML(stop.name)}</b><span>${escapeHTML(stop.country || stop.address || "未填写地区")}</span></button>
+        <button type="button" class="route-stop-move" aria-label="上移地点" ${index === 0 ? "disabled" : ""}>↑</button>
+        <button type="button" class="route-stop-move" aria-label="下移地点" ${index === stops.length - 1 ? "disabled" : ""}>↓</button>`;
+      $(".route-stop-select", row).addEventListener("click", () => selectRouteStop(stop.id));
+      const moveButtons = $$(".route-stop-move", row);
+      moveButtons[0].addEventListener("click", () => moveRouteStop(stop.id, -1));
+      moveButtons[1].addEventListener("click", () => moveRouteStop(stop.id, 1));
+      box.appendChild(row);
+    });
+  }
+
+  function selectRouteStop(id) {
+    if (activeRouteStopId !== id && !saveActiveRouteStop({ quiet:true })) return;
+    const stop = routeEditorDraft?.stops.find(item => item.id === id);
+    if (!stop) return;
+    populateRouteStopFields(stop);
+    renderRouteStopList();
+  }
+
+  function startNewRouteStop() {
+    if (!saveActiveRouteStop({ quiet:true })) return;
+    clearRouteStopFields();
+    renderRouteStopList();
+    $("#routeStopName").focus();
+  }
+
+  function moveRouteStop(id, direction) {
+    if (!saveActiveRouteStop({ quiet:true })) return;
+    const index = routeEditorDraft?.stops.findIndex(stop => stop.id === id) ?? -1;
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= routeEditorDraft.stops.length) return;
+    [routeEditorDraft.stops[index], routeEditorDraft.stops[target]] = [routeEditorDraft.stops[target], routeEditorDraft.stops[index]];
+    renderRouteStopList();
+  }
+
+  function deleteActiveRouteStop() {
+    if (!activeRouteStopId || !routeEditorDraft) return;
+    const stop = routeEditorDraft.stops.find(item => item.id === activeRouteStopId);
+    if (!stop || !confirm(`删除地点“${stop.name}”？`)) return;
+    routeEditorDraft.stops = routeEditorDraft.stops.filter(item => item.id !== activeRouteStopId);
+    clearRouteStopFields();
+    renderRouteStopList();
+  }
+
+  function openRouteDialog(id = "") {
+    const existing = id ? state.routeTrips.find(trip => trip.id === id) : null;
+    routeEditorDraft = structuredClone(existing || emptyRouteTrip());
+    activeRouteStopId = "";
+    $("#routeTripId").value = routeEditorDraft.id;
+    $("#routeTripTitle").value = routeEditorDraft.title || "";
+    $("#routeTripNote").value = routeEditorDraft.note || "";
+    $("#routeTripStart").value = routeEditorDraft.start || "";
+    $("#routeTripEnd").value = routeEditorDraft.end || "";
+    $("#routeTripCurrent").checked = Boolean(routeEditorDraft.current);
+    $("#routeDialogTitle").textContent = existing ? "编辑这次旅行" : "新建一次旅行";
+    $("#deleteRouteTrip").classList.toggle("hidden", !existing);
+    clearRouteStopFields();
+    renderRouteStopList();
+    $("#routeDialog").showModal();
+    document.body.classList.add("modal-open");
+  }
+
+  function closeRouteDialog() {
+    const dialog = $("#routeDialog");
+    if (dialog.open) dialog.close();
+    routeEditorDraft = null;
+    activeRouteStopId = "";
+    routeGeocodeCandidates = [];
+    document.body.classList.remove("modal-open");
+  }
+
+  function refreshRouteViews() {
+    lastMapSignature = "";
+    lastGlobeSignature = "";
+    renderRouteTimeline();
+    updateMap(true);
+    updateGlobeData(true);
+  }
+
+  function submitRouteTrip(event) {
+    event.preventDefault();
+    if (!routeEditorDraft || !saveActiveRouteStop()) return;
+    const title = $("#routeTripTitle").value.trim();
+    if (!title) {
+      alert("请填写这次旅行的名称。");
+      return;
+    }
+    if (!routeEditorDraft.stops.length) {
+      alert("请至少添加一个路线地点。");
+      return;
+    }
+    Object.assign(routeEditorDraft, {
+      title,
+      note: $("#routeTripNote").value.trim(),
+      start: $("#routeTripStart").value,
+      end: $("#routeTripEnd").value,
+      current: $("#routeTripCurrent").checked
+    });
+    if (routeEditorDraft.current) state.routeTrips.forEach(trip => { trip.current = false; });
+    const existingIndex = state.routeTrips.findIndex(trip => trip.id === routeEditorDraft.id);
+    if (existingIndex >= 0) state.routeTrips.splice(existingIndex, 1, structuredClone(routeEditorDraft));
+    else state.routeTrips.push(structuredClone(routeEditorDraft));
+    saveState();
+    closeRouteDialog();
+    refreshRouteViews();
+  }
+
+  function deleteRouteTrip() {
+    if (!routeEditorDraft) return;
+    if (!confirm(`删除旅行“${routeEditorDraft.title || "未命名旅行"}”？`)) return;
+    state.routeTrips = state.routeTrips.filter(trip => trip.id !== routeEditorDraft.id);
+    saveState();
+    closeRouteDialog();
+    refreshRouteViews();
+  }
+
+  async function geocodeRouteStop() {
+    const query = [
+      $("#routeStopName").value.trim(),
+      $("#routeStopAddress").value.trim(),
+      $("#routeStopCountry").value.trim()
+    ].filter(Boolean).join(" ");
+    if (!query) {
+      $("#routeGeocodeStatus").textContent = "请先输入地点、国家或详细地址。";
+      return;
+    }
+    const button = $("#routeGeocodeBtn");
+    button.disabled = true;
+    $("#routeGeocodeStatus").textContent = "正在搜索地点…";
+    $("#routeGeocodeResults").innerHTML = "";
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&accept-language=${encodeURIComponent(state.language)}&q=${encodeURIComponent(query)}`;
+      const response = await fetch(url, { headers:{ Accept:"application/json" } });
+      if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+      routeGeocodeCandidates = await response.json();
+      if (!routeGeocodeCandidates.length) {
+        $("#routeGeocodeStatus").textContent = "没有找到匹配地点，请修改关键词或手动填写坐标。";
+        return;
+      }
+      $("#routeGeocodeStatus").textContent = "选择一个结果以写入地点和坐标。数据来源：OpenStreetMap / Nominatim。";
+      const results = $("#routeGeocodeResults");
+      routeGeocodeCandidates.forEach((candidate, index) => {
+        const result = document.createElement("button");
+        result.type = "button";
+        result.className = "route-geocode-result";
+        const name = candidate.name || String(candidate.display_name || "").split(",")[0] || "未命名地点";
+        result.innerHTML = `<b>${escapeHTML(name)}</b><span>${escapeHTML(candidate.display_name || "")}</span>`;
+        result.addEventListener("click", () => applyRouteGeocodeCandidate(index));
+        results.appendChild(result);
+      });
+    } catch (error) {
+      console.warn("Route location search failed", error);
+      $("#routeGeocodeStatus").textContent = "搜索失败，请检查网络或手动填写坐标。";
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function applyRouteGeocodeCandidate(index) {
+    const candidate = routeGeocodeCandidates[index];
+    if (!candidate) return;
+    const displayName = String(candidate.display_name || "");
+    const name = candidate.name || displayName.split(",")[0] || "";
+    $("#routeStopName").value = name;
+    $("#routeStopCountry").value = candidate.address?.country || $("#routeStopCountry").value;
+    $("#routeStopAddress").value = displayName;
+    $("#routeStopLat").value = Number(candidate.lat).toFixed(6);
+    $("#routeStopLng").value = Number(candidate.lon).toFixed(6);
+    $("#routeGeocodeStatus").textContent = "已写入地点与坐标；点击“保存地点到这次旅行”确认。";
+    $("#routeGeocodeResults").innerHTML = "";
   }
 
   function renderAll() {
@@ -1460,7 +1746,6 @@
     routeLayer = L.featureGroup().addTo(map);
     markerLayer = L.featureGroup().addTo(map);
     cityLayer = L.featureGroup().addTo(map);
-    originLayer = L.featureGroup().addTo(map);
 
     map.on("dragstart zoomstart", hideMapDestinationCard);
     map.on("moveend", () => { if (!firstTileReady) setMapLoader("mapLoading", true); });
@@ -1534,19 +1819,9 @@
     });
   }
 
-  function makeOriginIcon() {
-    return L.divIcon({
-      className:"",
-      html:'<div class="paint-marker origin-marker">✦</div>',
-      iconSize:[28,28],
-      iconAnchor:[14,14]
-    });
-  }
-
   function getRouteSignature() {
     return JSON.stringify({
       language: state.language,
-      origin: state.origin,
       routeTrips: state.routeTrips
     });
   }
@@ -1604,7 +1879,7 @@
   }
 
   function updateMap(force = false) {
-    if (!map || !routeLayer || !markerLayer || !originLayer || !cityLayer) return;
+    if (!map || !routeLayer || !markerLayer || !cityLayer) return;
     const signature = getRouteSignature();
     if (!force && signature === lastMapSignature) {
       updateGlobeData();
@@ -1613,15 +1888,7 @@
     lastMapSignature = signature;
     routeLayer.clearLayers();
     markerLayer.clearLayers();
-    originLayer.clearLayers();
     cityLayer.clearLayers();
-
-    const origin = [Number(state.origin.lat), Number(state.origin.lng)];
-    if (origin.every(Number.isFinite)) {
-      L.marker(origin, { icon:makeOriginIcon(), title:state.origin.name })
-        .bindTooltip(state.origin.name, { direction:"top", offset:[0,-8] })
-        .addTo(originLayer);
-    }
 
     groupedCountries().forEach((items, country) => {
       const centroid = items.reduce((acc, item) => [acc[0] + item.lat, acc[1] + item.lng], [0,0]).map(value => value / items.length);
@@ -1654,10 +1921,9 @@
   }
 
   function footprintCoordinates() {
-    const points = allMapPoints().map(point => [Number(point.lat), Number(point.lng)]);
-    const origin = [Number(state.origin.lat), Number(state.origin.lng)];
-    if (origin.every(Number.isFinite)) points.push(origin);
-    return points.filter(point => point.every(Number.isFinite));
+    return allMapPoints()
+      .map(point => [Number(point.lat), Number(point.lng)])
+      .filter(point => point.every(Number.isFinite));
   }
 
   function fitMap() {
@@ -1970,16 +2236,6 @@
       origin:point.kind === "origin",
       current:Boolean(point.current)
     }));
-    const originPoint = {
-      id:"origin",
-      name:state.origin.name,
-      country:t("originLabel"),
-      lat:Number(state.origin.lat),
-      lng:Number(state.origin.lng),
-      origin:true,
-      current:false
-    };
-    if (Number.isFinite(originPoint.lat) && Number.isFinite(originPoint.lng) && !points.some(point => point.origin)) points.unshift(originPoint);
     const unique = [];
     const seen = new Set();
     points.forEach(point => {
@@ -2150,7 +2406,6 @@
     } catch (_) { $("#geocodeStatus").textContent = t("locateFailed"); }
   }
 
-  function fillOriginInputs() { $("#originName").value = state.origin.name; $("#originLat").value = state.origin.lat; $("#originLng").value = state.origin.lng; }
   function initEditableText() {
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(EDITABLE_KEY) || "{}"); } catch (_) {}
@@ -2655,6 +2910,15 @@
     });
     ["addTripTop","addTripBottom","addTripClosing"].forEach(id => $("#"+id).addEventListener("click", () => openTripDialog()));
     $("#closeDialog").addEventListener("click", closeTripDialog); $("#cancelTrip").addEventListener("click", closeTripDialog); $("#tripForm").addEventListener("submit", submitTrip); $("#deleteTrip").addEventListener("click", deleteCurrentTrip); $("#geocodeBtn").addEventListener("click", geocodeTrip);
+    $("#newRouteTrip").addEventListener("click", () => openRouteDialog());
+    $("#closeRouteDialog").addEventListener("click", closeRouteDialog);
+    $("#cancelRouteDialog").addEventListener("click", closeRouteDialog);
+    $("#routeForm").addEventListener("submit", submitRouteTrip);
+    $("#deleteRouteTrip").addEventListener("click", deleteRouteTrip);
+    $("#newRouteStop").addEventListener("click", startNewRouteStop);
+    $("#saveRouteStop").addEventListener("click", () => saveActiveRouteStop());
+    $("#deleteRouteStop").addEventListener("click", deleteActiveRouteStop);
+    $("#routeGeocodeBtn").addEventListener("click", geocodeRouteStop);
     $("#searchInput").addEventListener("input", renderJournal); $("#countryFilter").addEventListener("change", renderJournal); $("#typeFilter").addEventListener("change", renderJournal);
     $("#map2dBtn").addEventListener("click", () => setMapMode("2d"));
     $("#map3dBtn").addEventListener("click", () => setMapMode("3d"));
@@ -2663,8 +2927,8 @@
       renderRouteTimeline();
     });
     $("#fitMapBtn").addEventListener("click", fitAllFootprints);
-    $("#saveOrigin").addEventListener("click", () => { state.origin={name:$("#originName").value.trim(),lat:Number($("#originLat").value),lng:Number($("#originLng").value)}; saveState(); renderAll(); fillOriginInputs(); });
     $("#tripDialog").addEventListener("click", e => { const rect=$("#tripDialog").getBoundingClientRect(); if (e.clientX<rect.left || e.clientX>rect.right || e.clientY<rect.top || e.clientY>rect.bottom) closeTripDialog(); });
+    $("#routeDialog").addEventListener("click", e => { const rect=$("#routeDialog").getBoundingClientRect(); if (e.clientX<rect.left || e.clientX>rect.right || e.clientY<rect.top || e.clientY>rect.bottom) closeRouteDialog(); });
     $("#closeMapDestinationCard").addEventListener("click", hideMapDestinationCard);
 
     const audio = $("#audioPlayer");
@@ -3140,7 +3404,7 @@
   }
 
   function init() {
-    initLoader(); painting = createPainting($("#paintCanvas")); initPaintAtmosphere(); applyMemoryStyle(state.memoryStyle, { persist:false, rerender:false }); fillOriginInputs(); bindEvents(); initEditableText(); initCornerSketches(); applyI18n(); initMapWhenNeeded();
+    initLoader(); painting = createPainting($("#paintCanvas")); initPaintAtmosphere(); applyMemoryStyle(state.memoryStyle, { persist:false, rerender:false }); bindEvents(); initEditableText(); initCornerSketches(); applyI18n(); initMapWhenNeeded();
   }
   document.addEventListener("DOMContentLoaded", init);
 })();

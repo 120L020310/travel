@@ -1,4 +1,4 @@
-# Travel Reverie 7.0 · Independent Browser Data Model
+# Travel Reverie 7.1 · Independent Route Editor
 
 ## 1. 浏览器数据持久化与模型解绑
 
@@ -6,9 +6,11 @@
 
 - 旅行日志、真实旅行路线和主题设置分别写入独立的 LocalStorage 记录。
 - 照片与视频继续保存在当前浏览器的 IndexedDB。
-- 现有 V6 数据会在首次打开 7.0 时迁移：5 次真实旅行会保存为独立地点快照。
+- 现有 V6 数据会在首次打开 7.1 时迁移：5 次真实旅行会保存为独立地点快照。
 - 修改旅行日志不会再改变真实旅行路线、平面地图或立体地图。
 - 分类与归档继续只根据旅行日志更新。
+- 可新建、编辑、删除一次真实旅行；路线地点也可独立新增、编辑、删除和上下排序。
+- 路线地点可通过按钮搜索地址并选择经纬度，地图只读取这些路线快照。
 
 本阶段移除了 JSON 导入导出入口；后续桌面 App 将复用同一数据模型，把浏览器存储适配为本地项目文件夹。
 
@@ -134,13 +136,13 @@ python3 -m http.server 8000
 访问：
 
 ```text
-http://localhost:8000/?build=7.0-independent-browser-data
+http://localhost:8000/?build=7.1-route-editor
 ```
 
 控制台应显示：
 
 ```text
-[Travel Reverie] build 7.0-independent-browser-data loaded
+[Travel Reverie] build 7.1-independent-route-editor loaded
 [Travel Reverie] separate memory card components 6.4 loaded
 [Travel Reverie] editable Film reference board 6.4 loaded
 [Travel Reverie] creative experience 6.4 loaded

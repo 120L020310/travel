@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-travel-reverie-build="7.0-independent-browser-data" data-journal-default="compact">
+<html lang="zh-CN" data-travel-reverie-build="7.1-independent-route-editor" data-journal-default="compact">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -553,14 +553,6 @@
       </div>
       <div class="map-layout">
         <div class="map-frame glass sketch-panel">
-          <div class="map-caption">
-            <span class="pulse-dot"></span>
-            <span data-i18n="originLabel">旅程起点</span>
-            <input id="originName" value="济南 · Jinan" aria-label="Origin name">
-            <input id="originLat" type="number" step="0.0001" value="36.6512" aria-label="Origin latitude">
-            <input id="originLng" type="number" step="0.0001" value="117.1201" aria-label="Origin longitude">
-            <button id="saveOrigin" class="tiny-button" data-i18n="save">保存</button>
-          </div>
           <div id="mapLoadingOverlay" class="map-loading">正在铺开地图颜料…</div>
           <div id="map2d" class="map-canvas"></div>
           <div id="globe3d" class="map-canvas hidden">
@@ -577,7 +569,8 @@
           <div class="route-head">
             <small>travel thread</small>
             <h3>真实旅途路线</h3>
-            <p>按照实际落地、转场、回程与最新实习迁移顺序显示，当前停留在马德里。</p>
+            <p>每一次旅行与其中的地点均独立保存，可自行新增、编辑、排序或删除。</p>
+            <button id="newRouteTrip" class="tiny-button" type="button">＋ 新建一次旅行</button>
           </div>
           <div id="routeTimeline" class="route-timeline"></div>
           <button id="routeToggle" class="route-toggle" type="button" aria-expanded="false">
@@ -725,6 +718,70 @@
     </form>
   </dialog>
 
+  <dialog id="routeDialog" class="trip-dialog route-dialog">
+    <form id="routeForm" method="dialog">
+      <div class="dialog-head">
+        <div>
+          <small>真实旅途路线</small>
+          <h2 id="routeDialogTitle">新建一次旅行</h2>
+        </div>
+        <button id="closeRouteDialog" type="button" class="icon-button" aria-label="关闭">×</button>
+      </div>
+
+      <input id="routeTripId" type="hidden">
+      <div class="form-grid">
+        <label><span>旅行名称</span><input id="routeTripTitle" required placeholder="例如：冬日中欧与意大利"></label>
+        <label class="route-current-field"><span>旅行状态</span><span><input id="routeTripCurrent" type="checkbox"> 当前进行中</span></label>
+        <label><span>开始日期</span><input id="routeTripStart" type="date"></label>
+        <label><span>结束日期</span><input id="routeTripEnd" type="date"></label>
+      </div>
+      <label class="full-label"><span>旅行说明</span><textarea id="routeTripNote" rows="3" placeholder="记录这次旅行的主题、交通方式或特别片段……"></textarea></label>
+
+      <section class="route-stop-editor" aria-labelledby="routeStopsHeading">
+        <div class="route-editor-section-head">
+          <div>
+            <small>route stops</small>
+            <h3 id="routeStopsHeading">路线地点</h3>
+          </div>
+          <button id="newRouteStop" type="button" class="tiny-button">＋ 添加地点</button>
+        </div>
+        <div id="routeStopList" class="route-stop-list" aria-live="polite"></div>
+      </section>
+
+      <section class="route-stop-fields" aria-labelledby="routeStopFieldsHeading">
+        <div class="route-editor-section-head">
+          <div>
+            <small>place snapshot</small>
+            <h3 id="routeStopFieldsHeading">编辑地点</h3>
+          </div>
+          <button id="deleteRouteStop" type="button" class="danger-button hidden">删除地点</button>
+        </div>
+        <input id="routeStopId" type="hidden">
+        <div class="form-grid">
+          <label><span>地点名称</span><input id="routeStopName" placeholder="Granada / 格拉纳达"></label>
+          <label><span>所属国家或地区</span><input id="routeStopCountry" placeholder="Spain / 西班牙"></label>
+          <label class="cover-url-field"><span>详细地址</span><input id="routeStopAddress" placeholder="可输入街道、机场、车站或景点"></label>
+          <label><span>纬度</span><input id="routeStopLat" type="number" step="0.000001" placeholder="37.1773"></label>
+          <label><span>经度</span><input id="routeStopLng" type="number" step="0.000001" placeholder="-3.5986"></label>
+        </div>
+        <div class="geocode-row">
+          <button id="routeGeocodeBtn" type="button" class="ghost-button">搜索地点与坐标</button>
+          <span id="routeGeocodeStatus">输入地点、国家或地址后搜索；也可手动填写坐标。</span>
+        </div>
+        <div id="routeGeocodeResults" class="route-geocode-results" aria-live="polite"></div>
+        <label class="full-label"><span>地点备注</span><textarea id="routeStopNote" rows="2" placeholder="例如：住在这里、换乘、当天的天气或记忆……"></textarea></label>
+        <div class="route-stop-save-row"><button id="saveRouteStop" type="button" class="ghost-button">保存地点到这次旅行</button></div>
+      </section>
+
+      <div class="dialog-actions route-dialog-actions">
+        <button id="deleteRouteTrip" type="button" class="danger-button hidden">删除这次旅行</button>
+        <span></span>
+        <button id="cancelRouteDialog" type="button" class="ghost-button">取消</button>
+        <button type="submit" class="primary-button">保存这次旅行</button>
+      </div>
+    </form>
+  </dialog>
+
   <template id="cardTemplate">
     <article class="trip-card sketch-card">
       <div class="sketch-outline"></div>
@@ -750,7 +807,7 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
   <script src="https://unpkg.com/lenis@1.3.25/dist/lenis.min.js"></script>
-  <script src="app-v6-4.js?v=20260727-700"></script>
+  <script src="app-v6-4.js?v=20260727-710"></script>
   <script src="memory-components-v6-4.js?v=20260714-640"></script>
   <script src="film-board-editor-v6-4.js?v=20260714-640"></script>
   <script src="experience-v6-4.js?v=20260714-640"></script>
