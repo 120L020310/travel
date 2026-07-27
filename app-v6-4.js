@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.2.1-route-edit-entry";
-  console.info("[Travel Reverie] build 7.2.1-route-edit-entry loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.3-direct-route-scroll";
+  console.info("[Travel Reverie] build 7.3-direct-route-scroll loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -332,7 +332,6 @@
     }
   });
   const ROUTE_PREVIEW_COUNT = 3;
-  const ROUTE_STOP_PREVIEW_COUNT = 5;
 
   const MEMORY_THEME_CAPABILITIES = Object.freeze({
     oil: Object.freeze({
@@ -489,7 +488,6 @@
   let revealObserver;
   let mediaVisibilityObserver;
   let routeExpanded = false;
-  const expandedRouteTripIds = new Set();
   let routeEditorDraft = null;
   let activeRouteStopId = "";
   let routeGeocodeCandidates = [];
@@ -1279,17 +1277,11 @@
       const color = routeColor(tripIndex);
       const panel = document.createElement("section");
       const hidden = !routeExpanded && tripIndex < startIndex;
-      const tripExpanded = expandedRouteTripIds.has(trip.id);
-      const visibleStops = tripExpanded
-        ? trip.stops
-        : trip.stops.slice(0, ROUTE_STOP_PREVIEW_COUNT);
-      const hiddenStopCount = Math.max(0, trip.stops.length - visibleStops.length);
       const dateLabel = routeDateLabel(trip);
       panel.className = [
         "route-stage",
         trip.current ? "current-stage" : "",
-        hidden ? "is-route-hidden" : "",
-        tripExpanded ? "is-trip-expanded" : ""
+        hidden ? "is-route-hidden" : ""
       ].filter(Boolean).join(" ");
 
       panel.innerHTML = `
@@ -1301,14 +1293,14 @@
           </div>
           <div class="route-card-controls">
             <span class="route-stop-count">${trip.stops.length}<small>地点</small></span>
-            <button type="button" class="tiny-button route-card-edit" aria-label="编辑旅行：${escapeHTML(trip.title || "未命名旅行")}">编辑旅行</button>
+            <button type="button" class="tiny-button route-card-edit" aria-label="编辑旅行：${escapeHTML(trip.title || "未命名旅行")}">编辑</button>
           </div>
         </div>
         ${trip.note ? `<p class="route-card-note">${escapeHTML(trip.note)}</p>` : ""}
         <div class="route-steps"></div>`;
 
       const stepsBox = $(".route-steps", panel);
-      visibleStops.forEach((stop, stopIndex) => {
+      trip.stops.forEach((stop, stopIndex) => {
         const row = document.createElement("div");
         row.className = "route-step";
         row.innerHTML = `
@@ -1319,30 +1311,7 @@
           </div>`;
         stepsBox.appendChild(row);
       });
-      if (hiddenStopCount) {
-        const more = document.createElement("div");
-        more.className = "route-step-more";
-        more.textContent = `还有 ${hiddenStopCount} 个地点`;
-        stepsBox.appendChild(more);
-      }
-
       $(".route-card-edit", panel).addEventListener("click", () => openRouteDialog(trip.id));
-      if (trip.stops.length > ROUTE_STOP_PREVIEW_COUNT) {
-        const actions = document.createElement("div");
-        actions.className = "route-stage-actions";
-        const expand = document.createElement("button");
-        expand.type = "button";
-        expand.className = "tiny-button route-trip-toggle";
-        expand.setAttribute("aria-expanded", String(tripExpanded));
-        expand.textContent = tripExpanded ? "收起地点" : `查看全部 ${trip.stops.length} 个地点`;
-        expand.addEventListener("click", () => {
-          if (tripExpanded) expandedRouteTripIds.delete(trip.id);
-          else expandedRouteTripIds.add(trip.id);
-          renderRouteTimeline();
-        });
-        actions.appendChild(expand);
-        panel.appendChild(actions);
-      }
       box.appendChild(panel);
     });
 

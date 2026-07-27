@@ -1701,7 +1701,22 @@ dialog,
 .route-stage .route-steps {
   display: grid;
   gap: 8px;
+  max-height: min(42vh, 350px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  touch-action: pan-y;
   margin-top: 15px;
+  padding: 1px 5px 1px 1px;
+}
+
+.route-stage .route-steps::-webkit-scrollbar {
+  width: 5px;
+}
+
+.route-stage .route-steps::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(83,75,84,.28);
 }
 
 .route-stage .route-step {
@@ -1750,16 +1765,6 @@ dialog,
 
 .route-stage .route-step .step-label span {
   font-size: .64rem;
-}
-
-.route-step-more {
-  padding: 9px 12px;
-  border: 1px dashed rgba(72,63,74,.16);
-  border-radius: 12px;
-  color: rgba(54,49,54,.55);
-  text-align: center;
-  background: rgba(255,255,255,.24);
-  font-size: .66rem;
 }
 
 .route-empty-state {
@@ -1812,8 +1817,6 @@ dialog,
 /* Route editor: route trips own their stop snapshots and are edited separately
    from travel journal pages. */
 .route-head > .tiny-button { margin: 2px 0 2px; }
-.route-stage-actions { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; margin-top:14px; }
-.route-trip-toggle { color:var(--accent-color); }
 .route-dialog { width:min(920px, calc(100vw - 26px)); }
 .route-current-field > span { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 11px; border:1px solid rgba(72,63,74,.16); border-radius:12px; background:rgba(255,255,255,.48); }
 .route-current-field input { width:auto !important; }
@@ -1847,6 +1850,7 @@ dialog,
   .route-card-controls { gap:6px; }
   .route-card-edit { min-height:42px; padding:7px 8px; font-size:.67rem; }
   .route-stop-count { min-width:42px; min-height:42px; }
+  .route-stage .route-steps { max-height:300px; }
   .route-dialog { width:calc(100vw - 14px); }
   .route-stop-editor,
   .route-stop-fields { padding:14px; }

@@ -1,4 +1,4 @@
-# Travel Reverie 7.2.1 · Route Edit Entry
+# Travel Reverie 7.3 · Direct Route Scroll
 
 ## 1. 浏览器数据持久化与模型解绑
 
@@ -10,8 +10,8 @@
 - 修改旅行日志不会再改变真实旅行路线、平面地图或立体地图。
 - 分类与归档继续只根据旅行日志更新。
 - 可新建、编辑、删除一次真实旅行；路线地点也可独立新增、编辑、删除和上下排序。
-- 足迹地图侧栏默认以旅行卡片和地点模块展示；地点较多时，每次旅行可以独立展开或收起。
-- 每张旅行卡片的右上角固定显示“编辑旅行”，无需滚动到地点列表底部。
+- 足迹地图侧栏默认以旅行卡片和地点模块展示；每张卡片内的完整地点列表可直接上下滚动浏览。
+- 每张旅行卡片的右上角固定显示“编辑”，无需滚动到地点列表底部。
 - 路线地点可通过按钮搜索地址并选择经纬度，地图只读取这些路线快照。
 
 本阶段移除了 JSON 导入导出入口；后续桌面 App 将复用同一数据模型，把浏览器存储适配为本地项目文件夹。
@@ -144,7 +144,7 @@ http://localhost:8000/?build=7.2-modular-routes
 控制台应显示：
 
 ```text
-[Travel Reverie] build 7.2.1-route-edit-entry loaded
+[Travel Reverie] build 7.3-direct-route-scroll loaded
 [Travel Reverie] separate memory card components 6.4 loaded
 [Travel Reverie] editable Film reference board 6.4 loaded
 [Travel Reverie] creative experience 6.4 loaded
