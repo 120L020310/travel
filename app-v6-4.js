@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.1-independent-route-editor";
-  console.info("[Travel Reverie] build 7.1-independent-route-editor loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.2-modular-route-cards";
+  console.info("[Travel Reverie] build 7.2-modular-route-cards loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -332,6 +332,7 @@
     }
   });
   const ROUTE_PREVIEW_COUNT = 3;
+  const ROUTE_STOP_PREVIEW_COUNT = 5;
 
   const MEMORY_THEME_CAPABILITIES = Object.freeze({
     oil: Object.freeze({
@@ -488,6 +489,7 @@
   let revealObserver;
   let mediaVisibilityObserver;
   let routeExpanded = false;
+  const expandedRouteTripIds = new Set();
   let routeEditorDraft = null;
   let activeRouteStopId = "";
   let routeGeocodeCandidates = [];
@@ -1251,54 +1253,91 @@
     });
   }
 
-  function routeStopLabel(stop) {
-    if (!stop) return "";
-    return String(stop.name || "").split("·")[0].trim();
-  }
-
-  function routeSummary(trip) {
-    return trip.stops.map(routeStopLabel).filter(Boolean).join(" → ");
+  function routeDateLabel(trip) {
+    const start = String(trip.start || "").trim();
+    const end = String(trip.end || "").trim();
+    if (start && end) return start === end ? start : `${start} — ${end}`;
+    return start || end || "";
   }
 
   function renderRouteTimeline() {
     const box = $("#routeTimeline");
     const toggle = $("#routeToggle");
     box.innerHTML = "";
-    let globalIndex = 1;
     const startIndex = routeExpanded ? 0 : Math.max(0, state.routeTrips.length - ROUTE_PREVIEW_COUNT);
+
+    if (!state.routeTrips.length) {
+      box.innerHTML = `
+        <section class="route-empty-state">
+          <span>✦</span>
+          <h4>还没有真实旅途路线</h4>
+          <p>新建一次旅行后，地点会以独立模块显示在这里，并同步到地图。</p>
+        </section>`;
+    }
 
     state.routeTrips.forEach((trip, tripIndex) => {
       const color = routeColor(tripIndex);
       const panel = document.createElement("section");
       const hidden = !routeExpanded && tripIndex < startIndex;
+      const tripExpanded = expandedRouteTripIds.has(trip.id);
+      const visibleStops = tripExpanded
+        ? trip.stops
+        : trip.stops.slice(0, ROUTE_STOP_PREVIEW_COUNT);
+      const hiddenStopCount = Math.max(0, trip.stops.length - visibleStops.length);
+      const dateLabel = routeDateLabel(trip);
       panel.className = [
         "route-stage",
         trip.current ? "current-stage" : "",
         hidden ? "is-route-hidden" : "",
-        !routeExpanded ? "is-compact" : ""
+        tripExpanded ? "is-trip-expanded" : ""
       ].filter(Boolean).join(" ");
 
       panel.innerHTML = `
-        ${trip.current ? `<span class="current-route-badge">${escapeHTML(t("currentStatus"))}</span>` : ""}
-        <small>${escapeHTML(trip.note || "")}</small>
-        <h4>${escapeHTML(trip.title)}</h4>
-        <p class="route-summary">${escapeHTML(routeSummary(trip))}</p>
+        <div class="route-card-head">
+          <div class="route-card-title">
+            ${trip.current ? `<span class="current-route-badge">${escapeHTML(t("currentStatus"))}</span>` : ""}
+            <h4>${escapeHTML(trip.title || "未命名旅行")}</h4>
+            ${dateLabel ? `<time>${escapeHTML(dateLabel)}</time>` : ""}
+          </div>
+          <span class="route-stop-count">${trip.stops.length}<small>地点</small></span>
+        </div>
+        ${trip.note ? `<p class="route-card-note">${escapeHTML(trip.note)}</p>` : ""}
         <div class="route-steps"></div>`;
 
       const stepsBox = $(".route-steps", panel);
-      if (routeExpanded) {
-        trip.stops.forEach(stop => {
-          const row = document.createElement("div");
-          row.className = "route-step";
-          row.innerHTML = `<div class="step-no" style="background:${color}">${globalIndex}</div><div class="step-label"><b>${escapeHTML(stop.name)}</b><span>${escapeHTML(stop.country || "")}</span></div>`;
-          stepsBox.appendChild(row);
-          globalIndex += 1;
-        });
-      } else {
-        globalIndex += trip.stops.length;
+      visibleStops.forEach((stop, stopIndex) => {
+        const row = document.createElement("div");
+        row.className = "route-step";
+        row.innerHTML = `
+          <div class="step-no" style="--route-step-color:${safeColor(color)}">${stopIndex + 1}</div>
+          <div class="step-label">
+            <b>${escapeHTML(stop.name || "未命名地点")}</b>
+            <span>${escapeHTML(stop.country || stop.address || "未填写地区")}</span>
+          </div>`;
+        stepsBox.appendChild(row);
+      });
+      if (hiddenStopCount) {
+        const more = document.createElement("div");
+        more.className = "route-step-more";
+        more.textContent = `还有 ${hiddenStopCount} 个地点`;
+        stepsBox.appendChild(more);
       }
+
       const actions = document.createElement("div");
       actions.className = "route-stage-actions";
+      if (trip.stops.length > ROUTE_STOP_PREVIEW_COUNT) {
+        const expand = document.createElement("button");
+        expand.type = "button";
+        expand.className = "tiny-button route-trip-toggle";
+        expand.setAttribute("aria-expanded", String(tripExpanded));
+        expand.textContent = tripExpanded ? "收起地点" : `查看全部 ${trip.stops.length} 个地点`;
+        expand.addEventListener("click", () => {
+          if (tripExpanded) expandedRouteTripIds.delete(trip.id);
+          else expandedRouteTripIds.add(trip.id);
+          renderRouteTimeline();
+        });
+        actions.appendChild(expand);
+      }
       const edit = document.createElement("button");
       edit.type = "button";
       edit.className = "tiny-button";

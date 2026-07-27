@@ -1597,31 +1597,174 @@ dialog,
   display: none;
 }
 
-.route-stage.is-compact {
-  padding: 14px 15px;
+.route-stage {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border-color: rgba(72,63,74,.1);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.66), rgba(255,255,255,.28)),
+    rgba(235,228,220,.5);
+  box-shadow: 0 10px 24px rgba(54,47,53,.07);
 }
 
-.route-stage.is-compact > small {
-  display: none;
+.route-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent-color), rgba(132,101,122,.12));
+  opacity: .72;
 }
 
-.route-stage.is-compact h4 {
-  margin-bottom: 8px;
+.route-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 }
 
-.route-stage.is-compact .route-steps {
-  display: none;
+.route-card-title {
+  min-width: 0;
 }
 
-.route-summary {
+.route-card-title h4 {
   margin: 0;
-  font-size: .72rem;
-  line-height: 1.65;
-  color: rgba(54,49,54,.62);
+  font-size: 1.42rem;
+  line-height: 1.15;
 }
 
-.route-stage:not(.is-compact) .route-summary {
-  display: none;
+.route-card-title time {
+  display: block;
+  margin-top: 6px;
+  color: rgba(54,49,54,.52);
+  font-size: .68rem;
+  letter-spacing: .02em;
+}
+
+.route-stop-count {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 48px;
+  min-height: 48px;
+  place-content: center;
+  border: 1px solid rgba(72,63,74,.1);
+  border-radius: 16px 11px 15px 10px;
+  color: var(--ink-color);
+  text-align: center;
+  background: rgba(255,255,255,.54);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.route-stage .route-stop-count small {
+  display: block;
+  margin: 4px 0 0;
+  font-size: .56rem;
+  font-weight: 500;
+  opacity: .48;
+}
+
+.route-card-note {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 12px 0 0;
+  color: rgba(54,49,54,.62);
+  font-size: .72rem;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.route-stage .route-steps {
+  display: grid;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.route-stage .route-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 11px 8px 9px;
+  border: 1px solid rgba(72,63,74,.09);
+  border-radius: 15px 10px 14px 9px;
+  background: rgba(255,255,255,.48);
+  transition: transform .18s ease, background .18s ease;
+}
+
+.route-stage .route-step:hover {
+  transform: translateX(2px);
+  background: rgba(255,255,255,.72);
+}
+
+.route-stage .route-step .step-no {
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(255,255,255,.82);
+  border-radius: 50%;
+  color: #fff;
+  background: var(--route-step-color, var(--accent-color));
+  box-shadow: 0 4px 10px rgba(48,41,47,.16);
+}
+
+.route-stage .route-step .step-label {
+  min-width: 0;
+}
+
+.route-stage .route-step .step-label b,
+.route-stage .route-step .step-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-stage .route-step .step-label b {
+  font-size: .78rem;
+}
+
+.route-stage .route-step .step-label span {
+  font-size: .64rem;
+}
+
+.route-step-more {
+  padding: 9px 12px;
+  border: 1px dashed rgba(72,63,74,.16);
+  border-radius: 12px;
+  color: rgba(54,49,54,.55);
+  text-align: center;
+  background: rgba(255,255,255,.24);
+  font-size: .66rem;
+}
+
+.route-empty-state {
+  padding: 26px 20px;
+  border: 1px dashed rgba(72,63,74,.16);
+  border-radius: 22px 15px 21px 14px;
+  text-align: center;
+  background: rgba(255,255,255,.3);
+}
+
+.route-empty-state > span {
+  display: block;
+  color: var(--accent-color);
+  font-size: 1.4rem;
+}
+
+.route-empty-state h4 {
+  margin: 8px 0 6px;
+  font-size: 1rem;
+}
+
+.route-empty-state p {
+  margin: 0;
+  color: rgba(54,49,54,.58);
+  font-size: .7rem;
+  line-height: 1.55;
 }
 
 .route-toggle {
@@ -1648,7 +1791,9 @@ dialog,
 /* Route editor: route trips own their stop snapshots and are edited separately
    from travel journal pages. */
 .route-head > .tiny-button { margin: 2px 0 2px; }
-.route-stage-actions { display:flex; justify-content:flex-end; margin-top:12px; }
+.route-stage-actions { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:14px; }
+.route-stage-actions > .tiny-button:last-child { margin-left:auto; }
+.route-trip-toggle { color:var(--accent-color); }
 .route-dialog { width:min(920px, calc(100vw - 26px)); }
 .route-current-field > span { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 11px; border:1px solid rgba(72,63,74,.16); border-radius:12px; background:rgba(255,255,255,.48); }
 .route-current-field input { width:auto !important; }
@@ -1754,7 +1899,6 @@ h6,
 .route-head h3,
 .route-stage,
 .route-stage h4,
-.route-stage .route-summary,
 .route-step,
 .route-step b,
 .map-destination-card,
