@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "6.4-compact-journal-theme-sync";
-  console.info("[Travel Reverie] build 6.4-compact-journal-theme-sync loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.0-independent-browser-data";
+  console.info("[Travel Reverie] build 7.0-independent-browser-data loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -14,7 +14,13 @@
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-  const STORAGE_KEY = "travelReverieStateV6";
+  // V7 keeps each user-owned domain in its own browser record.  This mirrors
+  // the project-file layout planned for the desktop app and prevents a journal
+  // save from being able to overwrite route data by accident.
+  const SETTINGS_STORAGE_KEY = "travelReverieSettingsV7";
+  const JOURNAL_STORAGE_KEY = "travelReverieJournalV7";
+  const ROUTES_STORAGE_KEY = "travelReverieRoutesV7";
+  const LEGACY_STATE_KEY = "travelReverieStateV6";
   const LEGACY_KEYS = ["travelReverieStateV5", "travelReverieStateV4", "travelReverieStateV3", "travelReverieStateV2", "travelReverieStateV1"];
   const EDITABLE_KEY = "travelReverieEditableV1";
   const DB_NAME = "travelReverieMedia";
@@ -431,7 +437,9 @@
     { id:"aegina", aliases:["aegina","开心果岛","開心果島"], name:"Aegina · 开心果岛", country:"Greece · 希腊", start:"", end:"", type:"trip", color:"#aeb9a6", lat:37.7462, lng:23.4275, story:"从雅典乘船抵达的小岛。开心果树、港口与缓慢的午后，让旅程暂时安静下来。", media:[] }
   ];
 
-  const defaultRouteStages = [
+  // Kept solely as the V6-to-V7 migration source.  V7 route trips store their
+  // own stop snapshots and never resolve them through travel journal entries.
+  const legacyDefaultRouteStages = [
     { id:"phase-1", title:"留学启程", note:"从济南出发，先在马德里落地，再前往格拉纳达开始留学生活。", stopIds:["origin","madrid","granada"] },
     { id:"phase-2", title:"寒假中欧与意大利", note:"格拉纳达 → 马拉加机场 → 维也纳 → 布达佩斯 → 罗马 → 那不勒斯 → 罗马 → 格拉纳达", stopIds:["granada","malaga","vienna","budapest","rome","naples","rome","granada"] },
     { id:"phase-3", title:"四月安达卢西亚与海边", note:"格拉纳达 → 塞维利亚 → 巴塞罗那 → Tossa del Mar → 格拉纳达", stopIds:["granada","seville","barcelona","tossa","granada"] },
@@ -440,7 +448,7 @@
   ];
 
   const defaultState = {
-    schemaVersion: 6,
+    schemaVersion: 7,
     language: "zh-CN",
     memoryStyle: "oil",
     scene: ["water","moon","rose","gold","ocean","violet"][Math.floor(Math.random()*6)],
@@ -451,8 +459,8 @@
     paperColor: "#e8e0d4",
     customBackground: "",
     origin: { name: "济南 · Jinan", lat: 36.6512, lng: 117.1201 },
-    destinations: seedDestinations,
-    routeStages: defaultRouteStages,
+    journalEntries: structuredClone(seedDestinations),
+    routeTrips: createDefaultRouteTrips(seedDestinations, { name:"济南 · Jinan", lat:36.6512, lng:117.1201 }),
     musicTracks: []
   };
 
@@ -505,75 +513,168 @@
     }) || null;
   }
 
-  function migrateDestinations(savedDestinations = []) {
-    const usedIndexes = new Set();
-    const migrated = seedDestinations.map(seed => {
-      const index = savedDestinations.findIndex((item, idx) => !usedIndexes.has(idx) && findCanonicalSeed(item)?.id === seed.id);
-      const saved = index >= 0 ? savedDestinations[index] : null;
-      if (index >= 0) usedIndexes.add(index);
-      const merged = { ...structuredClone(seed), ...(saved || {}), id: seed.id, aliases: seed.aliases };
-      merged.media = Array.isArray(saved?.media) ? saved.media : [];
-      if (!Number.isFinite(Number(merged.lat))) merged.lat = seed.lat;
-      if (!Number.isFinite(Number(merged.lng))) merged.lng = seed.lng;
-      if (seed.id === "madrid") {
-        merged.type = "internship";
-        merged.status = "current";
-        const currentSentence = "如今，我已经从格拉纳达来到马德里实习，这座城市也从旅程的入口，变成了新的生活章节。";
-        if (!String(merged.story || "").includes("马德里实习")) {
-          merged.story = `${String(merged.story || seed.story).trim()} ${currentSentence}`.trim();
-        }
-      }
-      if (seed.id === "granada" && !String(merged.story || "").includes("马德里开始实习")) {
-        merged.story = `${String(merged.story || seed.story).trim()} 完成这一阶段后，我从格拉纳达前往马德里开始实习。`.trim();
-      }
+  function migrateJournalEntries(savedEntries = []) {
+    return savedEntries.map((item, index) => {
+      const seed = findCanonicalSeed(item);
+      const id = seed?.id || item?.id || `journal-${index + 1}-${crypto.randomUUID()}`;
+      const merged = { ...(seed ? structuredClone(seed) : {}), ...(item || {}), id };
+      merged.media = Array.isArray(item?.media) ? item.media : [];
+      if (!Number.isFinite(Number(merged.lat))) merged.lat = seed?.lat ?? null;
+      if (!Number.isFinite(Number(merged.lng))) merged.lng = seed?.lng ?? null;
       return merged;
     });
-
-    savedDestinations.forEach((item, idx) => {
-      if (usedIndexes.has(idx)) return;
-      const id = item.id && !seedDestinations.some(seed => seed.id === item.id) ? item.id : `custom-${crypto.randomUUID()}`;
-      migrated.push({ ...item, id, media: Array.isArray(item.media) ? item.media : [] });
-    });
-    return migrated;
   }
 
-  function readSavedState() {
-    const keys = [STORAGE_KEY, ...LEGACY_KEYS];
+  function routePlaceKey(stop = {}) {
+    const lat = Number(stop.lat);
+    const lng = Number(stop.lng);
+    return `${normalizeLookup(stop.name || stop.address || "place")}:${Number.isFinite(lat) ? lat.toFixed(6) : ""}:${Number.isFinite(lng) ? lng.toFixed(6) : ""}`;
+  }
+
+  function makeRouteStopSnapshot(source, tripId, stopIndex, options = {}) {
+    const lat = Number(source?.lat);
+    const lng = Number(source?.lng);
+    const stop = {
+      id: `${tripId}-stop-${stopIndex + 1}`,
+      name: String(source?.name || "未命名地点"),
+      country: String(source?.country || ""),
+      address: String(source?.address || ""),
+      lat: Number.isFinite(lat) ? lat : null,
+      lng: Number.isFinite(lng) ? lng : null,
+      note: String(source?.note || ""),
+      kind: options.kind || "place",
+      provider: source?.provider || "",
+      providerPlaceId: source?.providerPlaceId || ""
+    };
+    stop.placeKey = routePlaceKey(stop);
+    return stop;
+  }
+
+  function createRouteTripsFromLegacy(stages = legacyDefaultRouteStages, entries = seedDestinations, origin = defaultState?.origin) {
+    const entryMap = new Map(entries.map(entry => [entry.id, entry]));
+    return stages.map((stage, stageIndex) => {
+      const tripId = stage.id || `route-trip-${stageIndex + 1}`;
+      const stops = (stage.stopIds || []).map((stopId, stopIndex) => {
+        const source = stopId === "origin"
+          ? { ...origin, country:"" }
+          : entryMap.get(stopId) || seedDestinations.find(seed => seed.id === stopId) || { name:stopId };
+        return makeRouteStopSnapshot(source, tripId, stopIndex, { kind:stopId === "origin" ? "origin" : "place" });
+      });
+      return {
+        id: tripId,
+        title: String(stage.title || `旅行 ${stageIndex + 1}`),
+        note: String(stage.note || ""),
+        start: String(stage.start || ""),
+        end: String(stage.end || ""),
+        current: Boolean(stage.current),
+        stops
+      };
+    });
+  }
+
+  function createDefaultRouteTrips(entries, origin) {
+    return createRouteTripsFromLegacy(legacyDefaultRouteStages, entries, origin);
+  }
+
+  function normalizeRouteTrips(savedTrips = []) {
+    return savedTrips.map((trip, tripIndex) => {
+      const tripId = trip?.id || `route-trip-${tripIndex + 1}-${crypto.randomUUID()}`;
+      return {
+        id: tripId,
+        title: String(trip?.title || `旅行 ${tripIndex + 1}`),
+        note: String(trip?.note || ""),
+        start: String(trip?.start || ""),
+        end: String(trip?.end || ""),
+        current: Boolean(trip?.current),
+        stops: Array.isArray(trip?.stops)
+          ? trip.stops.map((stop, stopIndex) => {
+            const snapshot = makeRouteStopSnapshot(stop, tripId, stopIndex, { kind:stop?.kind || "place" });
+            snapshot.id = stop?.id || snapshot.id;
+            snapshot.placeKey = stop?.placeKey || routePlaceKey(snapshot);
+            return snapshot;
+          })
+          : []
+      };
+    });
+  }
+
+  function readJSON(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      console.warn(`Unable to read ${key}`, error);
+      return null;
+    }
+  }
+
+  function readCurrentState() {
+    const settings = readJSON(SETTINGS_STORAGE_KEY);
+    const journalEntries = readJSON(JOURNAL_STORAGE_KEY);
+    const routeTrips = readJSON(ROUTES_STORAGE_KEY);
+    if (!settings && journalEntries === null && routeTrips === null) return null;
+    return {
+      ...(settings || {}),
+      journalEntries: Array.isArray(journalEntries) ? journalEntries : null,
+      routeTrips: Array.isArray(routeTrips) ? routeTrips : null
+    };
+  }
+
+  function readLegacyState() {
+    const keys = [LEGACY_STATE_KEY, ...LEGACY_KEYS];
     for (const key of keys) {
-      try {
-        const raw = localStorage.getItem(key);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.destinations)) return parsed;
-      } catch (error) {
-        console.warn(`Unable to read ${key}`, error);
-      }
+      const parsed = readJSON(key);
+      if (parsed && Array.isArray(parsed.destinations)) return parsed;
     }
     return null;
   }
 
+  function persistState(value) {
+    const { journalEntries, routeTrips, ...settings } = value;
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journalEntries));
+      localStorage.setItem(ROUTES_STORAGE_KEY, JSON.stringify(routeTrips));
+    } catch (error) {
+      console.warn("Unable to save Travel Reverie data", error);
+    }
+  }
+
   function loadState() {
-    const saved = readSavedState();
+    const current = readCurrentState();
+    const legacy = current ? null : readLegacyState();
+    const source = current || legacy;
+    const legacyEntries = legacy?.destinations;
+    const sourceEntries = current?.journalEntries ?? legacyEntries;
+    const journalEntries = Array.isArray(sourceEntries)
+      ? migrateJournalEntries(sourceEntries)
+      : structuredClone(seedDestinations);
+    const origin = { ...defaultState.origin, ...(source?.origin || {}) };
+    const routeTrips = current && Array.isArray(current.routeTrips)
+      ? normalizeRouteTrips(current.routeTrips)
+      : createRouteTripsFromLegacy(legacy?.routeStages || legacyDefaultRouteStages, journalEntries, origin);
     const merged = {
       ...structuredClone(defaultState),
-      ...(saved || {}),
-      schemaVersion: 6,
-      memoryStyle: MEMORY_STYLE_IDS.includes(saved?.memoryStyle) ? saved.memoryStyle : "oil",
-      origin: { ...defaultState.origin, ...(saved?.origin || {}) },
-      destinations: migrateDestinations(saved?.destinations || []),
-      routeStages: structuredClone(defaultRouteStages),
-      musicTracks: Array.isArray(saved?.musicTracks) ? saved.musicTracks : []
+      ...(source || {}),
+      schemaVersion: 7,
+      memoryStyle: MEMORY_STYLE_IDS.includes(source?.memoryStyle) ? source.memoryStyle : "oil",
+      origin,
+      journalEntries,
+      routeTrips,
+      musicTracks: Array.isArray(source?.musicTracks) ? source.musicTracks : []
     };
+    delete merged.destinations;
+    delete merged.routeStages;
     merged.font = normalizeFontChoice(merged.font);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch (_) {}
+    persistState(merged);
     return merged;
   }
 
   function saveState() {
-    state.schemaVersion = 6;
+    state.schemaVersion = 7;
     state.memoryStyle = MEMORY_STYLE_IDS.includes(state.memoryStyle) ? state.memoryStyle : "oil";
     state.font = normalizeFontChoice(state.font);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { console.warn("Unable to save travel journal", error); }
+    persistState(state);
     const status = $("#saveStatus");
     if (status) status.textContent = t("savedLocally");
   }
@@ -787,20 +888,12 @@
   }
   function clearMediaUrls() { mediaUrls.forEach(url => URL.revokeObjectURL(url)); mediaUrls = []; }
 
-  function destinationMap() {
-    return new Map(state.destinations.map(d => [d.id || d.name, d]));
-  }
-  function getStopById(stopId) {
-    if (stopId === "origin") return { id:"origin", name: state.origin.name, country: t("originLabel"), lat:Number(state.origin.lat), lng:Number(state.origin.lng) };
-    return destinationMap().get(stopId) || null;
-  }
   function flattenRoutePoints() {
     const points = [];
-    state.routeStages.forEach((stage, stageIndex) => {
-      stage.stopIds.forEach((id, idx) => {
-        const item = getStopById(id);
-        if (item && Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) {
-          points.push({ ...item, stageIndex, order: points.length+1, localIndex: idx });
+    state.routeTrips.forEach((trip, tripIndex) => {
+      trip.stops.forEach((stop, stopIndex) => {
+        if (Number.isFinite(Number(stop.lat)) && Number.isFinite(Number(stop.lng))) {
+          points.push({ ...stop, tripIndex, order: points.length + 1, localIndex: stopIndex, current:Boolean(trip.current) });
         }
       });
     });
@@ -809,22 +902,18 @@
   function uniqueStopsFromRoute() {
     const map = new Map();
     flattenRoutePoints().forEach((p, i) => {
-      if (!map.has(p.id)) map.set(p.id, { ...p, visits:[i+1] });
-      else map.get(p.id).visits.push(i+1);
+      const key = p.placeKey || routePlaceKey(p);
+      if (!map.has(key)) map.set(key, { ...p, visits:[i + 1] });
+      else {
+        const saved = map.get(key);
+        saved.visits.push(i + 1);
+        saved.current ||= Boolean(p.current);
+      }
     });
     return [...map.values()];
   }
   function allMapPoints() {
-    const routed = uniqueStopsFromRoute();
-    const byId = new Map(routed.map(point => [point.id, point]));
-    state.destinations.forEach(destination => {
-      if (byId.has(destination.id)) return;
-      const lat = Number(destination.lat);
-      const lng = Number(destination.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      byId.set(destination.id, { ...destination, lat, lng, visits:[], unrouted:true });
-    });
-    return [...byId.values()];
+    return uniqueStopsFromRoute();
   }
 
   function ensureContentObservers() {
@@ -1081,7 +1170,7 @@
     const q = $("#searchInput").value.trim().toLowerCase();
     const cf = $("#countryFilter").value;
     const tf = $("#typeFilter").value;
-    const filtered = state.destinations.filter(item => {
+    const filtered = state.journalEntries.filter(item => {
       const hay = `${item.name} ${item.country} ${item.story}`.toLowerCase();
       return (!q || hay.includes(q)) && (cf === "all" || item.country === cf) && (tf === "all" || item.type === tf);
     });
@@ -1134,14 +1223,14 @@
   function buildCountryFilter() {
     const select = $("#countryFilter"); const current = select.value || "all";
     select.innerHTML = `<option value="all">${escapeHTML(t("allCountries"))}</option>`;
-    [...new Set(state.destinations.map(d => d.country).filter(Boolean))].sort().forEach(country => { const opt = document.createElement("option"); opt.value = country; opt.textContent = country; select.appendChild(opt); });
+    [...new Set(state.journalEntries.map(d => d.country).filter(Boolean))].sort().forEach(country => { const opt = document.createElement("option"); opt.value = country; opt.textContent = country; select.appendChild(opt); });
     select.value = [...select.options].some(o => o.value === current) ? current : "all";
   }
 
   function renderArchive() {
     const grid = $("#archiveGrid"); grid.innerHTML = "";
     const groups = new Map();
-    state.destinations.forEach(d => { const key = d.country || "Unknown"; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(d); });
+    state.journalEntries.forEach(d => { const key = d.country || "Unknown"; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(d); });
     [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0])).forEach(([country, items]) => {
       const card = document.createElement("button"); card.className = "archive-card"; card.style.setProperty("--archive-color", safeColor(items[0].color)); card.dataset.memoryIndex = String(stableHash(country) % 6);
       const years = [...new Set(items.map(x => x.start?.slice(0,4)).filter(Boolean))].sort();
@@ -1150,7 +1239,7 @@
       grid.appendChild(card);
     });
     const yearGroups = new Map();
-    state.destinations.forEach(d => { const year = d.start?.slice(0,4); if (!year) return; if (!yearGroups.has(year)) yearGroups.set(year, []); yearGroups.get(year).push(d); });
+    state.journalEntries.forEach(d => { const year = d.start?.slice(0,4); if (!year) return; if (!yearGroups.has(year)) yearGroups.set(year, []); yearGroups.get(year).push(d); });
     [...yearGroups.entries()].sort((a,b) => b[0].localeCompare(a[0])).forEach(([year, items]) => {
       const card = document.createElement("button"); card.className = "archive-card"; card.style.setProperty("--archive-color", safeColor(items[0].color)); card.dataset.memoryIndex = String(stableHash(year) % 6);
       card.innerHTML = `<small>${escapeHTML(t("yearBookmark"))}</small><h3>${year}</h3><p>${items.length} ${escapeHTML(t("destinations"))}</p>`;
@@ -1159,14 +1248,13 @@
     });
   }
 
-  function routeStopLabel(stopId) {
-    const stop = getStopById(stopId);
+  function routeStopLabel(stop) {
     if (!stop) return "";
     return String(stop.name || "").split("·")[0].trim();
   }
 
-  function routeSummary(stage) {
-    return stage.stopIds.map(routeStopLabel).filter(Boolean).join(" → ");
+  function routeSummary(trip) {
+    return trip.stops.map(routeStopLabel).filter(Boolean).join(" → ");
   }
 
   function renderRouteTimeline() {
@@ -1174,31 +1262,29 @@
     const toggle = $("#routeToggle");
     box.innerHTML = "";
     let globalIndex = 1;
-    const startIndex = routeExpanded ? 0 : Math.max(0, state.routeStages.length - ROUTE_PREVIEW_COUNT);
+    const startIndex = routeExpanded ? 0 : Math.max(0, state.routeTrips.length - ROUTE_PREVIEW_COUNT);
 
-    state.routeStages.forEach((stage, stageIndex) => {
-      const color = routeColor(stageIndex);
+    state.routeTrips.forEach((trip, tripIndex) => {
+      const color = routeColor(tripIndex);
       const panel = document.createElement("section");
-      const hidden = !routeExpanded && stageIndex < startIndex;
+      const hidden = !routeExpanded && tripIndex < startIndex;
       panel.className = [
         "route-stage",
-        stage.current ? "current-stage" : "",
+        trip.current ? "current-stage" : "",
         hidden ? "is-route-hidden" : "",
         !routeExpanded ? "is-compact" : ""
       ].filter(Boolean).join(" ");
 
       panel.innerHTML = `
-        ${stage.current ? `<span class="current-route-badge">${escapeHTML(t("currentStatus"))}</span>` : ""}
-        <small>${escapeHTML(stage.note || "")}</small>
-        <h4>${escapeHTML(stage.title)}</h4>
-        <p class="route-summary">${escapeHTML(routeSummary(stage))}</p>
+        ${trip.current ? `<span class="current-route-badge">${escapeHTML(t("currentStatus"))}</span>` : ""}
+        <small>${escapeHTML(trip.note || "")}</small>
+        <h4>${escapeHTML(trip.title)}</h4>
+        <p class="route-summary">${escapeHTML(routeSummary(trip))}</p>
         <div class="route-steps"></div>`;
 
       const stepsBox = $(".route-steps", panel);
       if (routeExpanded) {
-        stage.stopIds.forEach(id => {
-          const stop = getStopById(id);
-          if (!stop) return;
+        trip.stops.forEach(stop => {
           const row = document.createElement("div");
           row.className = "route-step";
           row.innerHTML = `<div class="step-no" style="background:${color}">${globalIndex}</div><div class="step-label"><b>${escapeHTML(stop.name)}</b><span>${escapeHTML(stop.country || "")}</span></div>`;
@@ -1206,13 +1292,13 @@
           globalIndex += 1;
         });
       } else {
-        globalIndex += stage.stopIds.length;
+        globalIndex += trip.stops.length;
       }
       box.appendChild(panel);
     });
 
     if (toggle) {
-      const hiddenCount = Math.max(0, state.routeStages.length - ROUTE_PREVIEW_COUNT);
+      const hiddenCount = Math.max(0, state.routeTrips.length - ROUTE_PREVIEW_COUNT);
       toggle.hidden = hiddenCount === 0;
       toggle.setAttribute("aria-expanded", String(routeExpanded));
       const label = $("span", toggle);
@@ -1221,7 +1307,7 @@
   }
 
   function renderAll() {
-    $("#destinationCount").textContent = state.destinations.length;
+    $("#destinationCount").textContent = state.journalEntries.length;
     buildCountryFilter(); renderJournal(); renderArchive(); renderRouteTimeline(); updateMap(); renderPlaylist();
   }
 
@@ -1461,8 +1547,7 @@
     return JSON.stringify({
       language: state.language,
       origin: state.origin,
-      destinations: state.destinations.map(({id,name,country,lat,lng,status}) => ({id,name,country,lat,lng,status})),
-      routeStages: state.routeStages
+      routeTrips: state.routeTrips
     });
   }
 
@@ -1474,12 +1559,12 @@
     currentMapDestinationId = "";
   }
 
-  function showMapDestinationCard(destination) {
-    if (!destination) return;
-    currentMapDestinationId = destination.id;
-    $("#mapDestinationMeta").textContent = `${destination.country || ""}${destination.status === "current" ? " · CURRENT" : ""}`;
-    $("#mapDestinationTitle").textContent = destination.name;
-    $("#mapDestinationStory").textContent = destination.story || t("emptyStory");
+  function showMapDestinationCard(stop) {
+    if (!stop) return;
+    currentMapDestinationId = stop.id;
+    $("#mapDestinationMeta").textContent = `${stop.country || ""}${stop.current ? " · CURRENT" : ""}`;
+    $("#mapDestinationTitle").textContent = stop.name;
+    $("#mapDestinationStory").textContent = stop.note || stop.address || "真实旅途路线中的地点。";
     const card = $("#mapDestinationCard");
     card.classList.add("open");
     card.setAttribute("aria-hidden", "false");
@@ -1487,12 +1572,12 @@
 
   function groupedCountries() {
     const groups = new Map();
-    state.destinations.forEach(destination => {
-      const lat = Number(destination.lat);
-      const lng = Number(destination.lng);
-      if (!destination.country || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      if (!groups.has(destination.country)) groups.set(destination.country, []);
-      groups.get(destination.country).push({ ...destination, lat, lng });
+    allMapPoints().forEach(stop => {
+      const lat = Number(stop.lat);
+      const lng = Number(stop.lng);
+      if (stop.kind === "origin" || !stop.country || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (!groups.has(stop.country)) groups.set(stop.country, []);
+      groups.get(stop.country).push({ ...stop, lat, lng });
     });
     return groups;
   }
@@ -1502,14 +1587,14 @@
     activeCountry = country;
     cityLayer.clearLayers();
     hideMapDestinationCard();
-    const items = state.destinations.filter(destination => destination.country === country && Number.isFinite(Number(destination.lat)) && Number.isFinite(Number(destination.lng)));
+    const items = (groupedCountries().get(country) || []);
     const bounds = [];
-    items.forEach(destination => {
-      const point = [Number(destination.lat), Number(destination.lng)];
+    items.forEach(stop => {
+      const point = [Number(stop.lat), Number(stop.lng)];
       bounds.push(point);
-      const marker = L.marker(point, { icon: makeCityIcon(destination.status === "current"), keyboard:true, title:destination.name });
-      marker.on("click", () => showMapDestinationCard(destination));
-      marker.bindTooltip(destination.name, { direction:"top", offset:[0,-8], opacity:.9 });
+      const marker = L.marker(point, { icon: makeCityIcon(Boolean(stop.current)), keyboard:true, title:stop.name });
+      marker.on("click", () => showMapDestinationCard(stop));
+      marker.bindTooltip(stop.name, { direction:"top", offset:[0,-8], opacity:.9 });
       marker.addTo(cityLayer);
     });
     if (!zoomToCountry || !bounds.length) return;
@@ -1546,23 +1631,21 @@
       marker.addTo(markerLayer);
     });
 
-    state.routeStages.forEach((stage, stageIndex) => {
-      const coords = stage.stopIds
-        .map(id => getStopById(id))
-        .filter(Boolean)
+    state.routeTrips.forEach((trip, tripIndex) => {
+      const coords = trip.stops
         .map(stop => [Number(stop.lat), Number(stop.lng)])
         .filter(coord => coord.every(Number.isFinite));
       if (coords.length < 2) return;
-      const color = routeColor(stageIndex);
+      const color = routeColor(tripIndex);
       L.polyline(coords, {
         renderer: map.options.renderer,
         color,
-        weight: stage.current ? 3.4 : 2.2,
-        opacity: stage.current ? .84 : .50,
+        weight: trip.current ? 3.4 : 2.2,
+        opacity: trip.current ? .84 : .50,
         lineCap:"round",
         lineJoin:"round",
         interactive:false,
-        dashArray: stage.current ? null : "3 4"
+        dashArray: trip.current ? null : "3 4"
       }).addTo(routeLayer);
     });
 
@@ -1772,8 +1855,7 @@
       callGlobeMethod(globe, "arcCurveResolution", 24);
       callGlobeMethod(globe, "arcCircularResolution", 4);
       callGlobeMethod(globe, "onPointClick", data => {
-        const destination = state.destinations.find(item => item.id === data.id);
-        if (destination) showMapDestinationCard(destination);
+        showMapDestinationCard(data);
       });
       callGlobeMethod(globe, "onGlobeReady", () => {
         setGlobeStatus(t("globeReady"), false, false);
@@ -1885,8 +1967,8 @@
       ...point,
       lat:Number(point.lat),
       lng:Number(point.lng),
-      origin:point.id === "origin",
-      current:point.status === "current" || point.id === "madrid"
+      origin:point.kind === "origin",
+      current:Boolean(point.current)
     }));
     const originPoint = {
       id:"origin",
@@ -1897,30 +1979,28 @@
       origin:true,
       current:false
     };
-    if (Number.isFinite(originPoint.lat) && Number.isFinite(originPoint.lng) && !points.some(point => point.id === "origin")) points.unshift(originPoint);
+    if (Number.isFinite(originPoint.lat) && Number.isFinite(originPoint.lng) && !points.some(point => point.origin)) points.unshift(originPoint);
     const unique = [];
     const seen = new Set();
     points.forEach(point => {
-      const key = `${point.id}:${point.lat}:${point.lng}`;
+      const key = `${point.placeKey || point.id}:${point.lat}:${point.lng}`;
       if (!seen.has(key)) { seen.add(key); unique.push(point); }
     });
 
     const arcs = [];
-    state.routeStages.forEach((stage, stageIndex) => {
-      const color = routeColor(stageIndex);
-      const stagePoints = stage.stopIds
-        .map(id => getStopById(id))
-        .filter(Boolean)
+    state.routeTrips.forEach((trip, tripIndex) => {
+      const color = routeColor(tripIndex);
+      const tripPoints = trip.stops
         .map(stop => ({ lat:Number(stop.lat), lng:Number(stop.lng) }))
         .filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lng));
-      for (let i=0; i<stagePoints.length-1; i += 1) {
+      for (let i=0; i<tripPoints.length-1; i += 1) {
         arcs.push({
-          startLat:stagePoints[i].lat,
-          startLng:stagePoints[i].lng,
-          endLat:stagePoints[i+1].lat,
-          endLng:stagePoints[i+1].lng,
+          startLat:tripPoints[i].lat,
+          startLng:tripPoints[i].lng,
+          endLat:tripPoints[i+1].lat,
+          endLng:tripPoints[i+1].lng,
           color,
-          current:Boolean(stage.current)
+          current:Boolean(trip.current)
         });
       }
     });
@@ -2033,7 +2113,7 @@
   }
 
   function openTripDialog(id = "") {
-    const item = id ? state.destinations.find(x => x.id === id) : null;
+    const item = id ? state.journalEntries.find(x => x.id === id) : null;
     $("#tripId").value = item?.id || ""; $("#tripName").value = item?.name || ""; $("#tripCountry").value = item?.country || ""; $("#tripStart").value = item?.start || ""; $("#tripEnd").value = item?.end || ""; $("#tripType").value = item?.type || "trip"; $("#tripColor").value = safeColor(item?.color || state.paperColor); $("#tripCoverUrl").value = item?.coverUrl || item?.coverImage || item?.imageUrl || ""; $("#tripLat").value = item?.lat ?? ""; $("#tripLng").value = item?.lng ?? ""; $("#tripStory").value = item?.story || ""; $("#tripMedia").value = "";
     $("#dialogTitle").textContent = item?.name || t("newDestination"); $("#deleteTrip").classList.toggle("hidden", !item); $("#geocodeStatus").textContent = t("coordinateHint"); renderExistingMedia(item); $("#tripDialog").showModal(); document.body.classList.add("modal-open");
   }
@@ -2050,16 +2130,16 @@
   }
   const closeTripDialog = () => { $("#tripDialog").close(); document.body.classList.remove("modal-open"); };
   async function submitTrip(event) {
-    event.preventDefault(); const id = $("#tripId").value || crypto.randomUUID(); let item = state.destinations.find(x => x.id === id);
-    if (!item) { item = { id, media:[] }; state.destinations.unshift(item); }
+    event.preventDefault(); const id = $("#tripId").value || crypto.randomUUID(); let item = state.journalEntries.find(x => x.id === id);
+    if (!item) { item = { id, media:[] }; state.journalEntries.unshift(item); }
     Object.assign(item, { name: $("#tripName").value.trim(), country: $("#tripCountry").value.trim(), start: $("#tripStart").value, end: $("#tripEnd").value, type: $("#tripType").value, color: $("#tripColor").value, coverUrl: $("#tripCoverUrl").value.trim(), lat: $("#tripLat").value === "" ? null : Number($("#tripLat").value), lng: $("#tripLng").value === "" ? null : Number($("#tripLng").value), story: $("#tripStory").value.trim(), media: item.media || [] });
     const files = [...$("#tripMedia").files]; for (const file of files) { try { item.media.push(await saveMediaBlob(id, file)); } catch (err) { console.error("Media save failed", err); } }
     saveState(); closeTripDialog(); renderAll();
   }
   async function deleteCurrentTrip() {
-    const id = $("#tripId").value; const item = state.destinations.find(x => x.id === id); if (!item) return; if (!confirm(`${t("deletePage")} — ${item.name}?`)) return;
+    const id = $("#tripId").value; const item = state.journalEntries.find(x => x.id === id); if (!item) return; if (!confirm(`${t("deletePage")} — ${item.name}?`)) return;
     for (const media of item.media || []) await removeMediaRecord(media.id).catch(() => {});
-    state.destinations = state.destinations.filter(x => x.id !== id); saveState(); closeTripDialog(); renderAll();
+    state.journalEntries = state.journalEntries.filter(x => x.id !== id); saveState(); closeTripDialog(); renderAll();
   }
   async function geocodeTrip() {
     const name = $("#tripName").value.trim(), country = $("#tripCountry").value.trim(); if (!name && !country) return; $("#geocodeStatus").textContent = "…";
@@ -2070,40 +2150,6 @@
     } catch (_) { $("#geocodeStatus").textContent = t("locateFailed"); }
   }
 
-  function exportJSON() {
-    const payload = { ...state, exportedAt:new Date().toISOString(), note:"Media blobs stay in the browser and are not included in this JSON." };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `travel-reverie-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
-  }
-  function importJSON(file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result);
-        if (!Array.isArray(data.destinations)) throw new Error("Invalid destinations");
-        state = {
-          ...structuredClone(defaultState),
-          ...data,
-          schemaVersion: 6,
-          memoryStyle:MEMORY_STYLE_IDS.includes(data.memoryStyle) ? data.memoryStyle : "oil",
-          origin:{ ...defaultState.origin, ...(data.origin || {}) },
-          destinations:migrateDestinations(data.destinations),
-          routeStages:structuredClone(defaultRouteStages),
-          musicTracks:Array.isArray(data.musicTracks) ? data.musicTracks : []
-        };
-        lastMapSignature = "";
-        lastGlobeSignature = "";
-        saveState();
-        applyMemoryStyle(state.memoryStyle, { persist:false, rerender:false });
-        applyI18n();
-        fillOriginInputs();
-        alert(t("imported"));
-      } catch (error) {
-        console.warn("Import failed", error);
-        alert(t("importFailed"));
-      }
-    };
-    reader.readAsText(file);
-  }
   function fillOriginInputs() { $("#originName").value = state.origin.name; $("#originLat").value = state.origin.lat; $("#originLng").value = state.origin.lng; }
   function initEditableText() {
     let saved = {};
@@ -2588,18 +2634,18 @@
     const randomScene = () => { const scenes=["water","moon","rose","gold","ocean","violet","lavender","creamrose"].filter(x => x!==state.scene); state.scene=scenes[Math.floor(Math.random()*scenes.length)]; state.customBackground=""; saveState(); applyTheme(); };
     $("#randomizeTheme").addEventListener("click", randomScene); $("#surpriseMe").addEventListener("click", randomScene);
     $("#resetTheme").addEventListener("click", () => {
-      const keep = state.destinations;
+      const keep = state.journalEntries;
       const origin = state.origin;
       const language = state.language;
-      const routes = state.routeStages;
+      const routes = state.routeTrips;
       const musicTracks = state.musicTracks;
       const memoryStyle = state.memoryStyle;
       state = {
         ...structuredClone(defaultState),
-        destinations:keep,
+        journalEntries:keep,
         origin,
         language,
-        routeStages:routes,
+        routeTrips:routes,
         musicTracks,
         memoryStyle
       };
@@ -2607,7 +2653,6 @@
       applyMemoryStyle(memoryStyle, { persist:false, rerender:false });
       applyI18n();
     });
-    $("#exportData").addEventListener("click", exportJSON); $("#importData").addEventListener("change", e => e.target.files[0] && importJSON(e.target.files[0]));
     ["addTripTop","addTripBottom","addTripClosing"].forEach(id => $("#"+id).addEventListener("click", () => openTripDialog()));
     $("#closeDialog").addEventListener("click", closeTripDialog); $("#cancelTrip").addEventListener("click", closeTripDialog); $("#tripForm").addEventListener("submit", submitTrip); $("#deleteTrip").addEventListener("click", deleteCurrentTrip); $("#geocodeBtn").addEventListener("click", geocodeTrip);
     $("#searchInput").addEventListener("input", renderJournal); $("#countryFilter").addEventListener("change", renderJournal); $("#typeFilter").addEventListener("change", renderJournal);
@@ -2621,16 +2666,6 @@
     $("#saveOrigin").addEventListener("click", () => { state.origin={name:$("#originName").value.trim(),lat:Number($("#originLat").value),lng:Number($("#originLng").value)}; saveState(); renderAll(); fillOriginInputs(); });
     $("#tripDialog").addEventListener("click", e => { const rect=$("#tripDialog").getBoundingClientRect(); if (e.clientX<rect.left || e.clientX>rect.right || e.clientY<rect.top || e.clientY>rect.bottom) closeTripDialog(); });
     $("#closeMapDestinationCard").addEventListener("click", hideMapDestinationCard);
-    $("#mapDestinationEdit").addEventListener("click", () => { if (currentMapDestinationId) openTripDialog(currentMapDestinationId); });
-    $("#mapDestinationJournal").addEventListener("click", () => {
-      const destination = state.destinations.find(item => item.id === currentMapDestinationId);
-      if (!destination) return;
-      $("#searchInput").value = destination.name.split("·")[0].trim();
-      $("#countryFilter").value = "all";
-      $("#typeFilter").value = "all";
-      renderJournal();
-      document.querySelector("#journal")?.scrollIntoView({ behavior:"smooth", block:"start" });
-    });
 
     const audio = $("#audioPlayer");
     $("#playPause").addEventListener("click", togglePlayPause);

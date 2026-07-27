@@ -1,3 +1,19 @@
+# Travel Reverie 7.0 · Independent Browser Data Model
+
+## 1. 浏览器数据持久化与模型解绑
+
+当前开发版会在同一浏览器、同一网页来源下自动保存并恢复用户数据，不需要后端。
+
+- 旅行日志、真实旅行路线和主题设置分别写入独立的 LocalStorage 记录。
+- 照片与视频继续保存在当前浏览器的 IndexedDB。
+- 现有 V6 数据会在首次打开 7.0 时迁移：5 次真实旅行会保存为独立地点快照。
+- 修改旅行日志不会再改变真实旅行路线、平面地图或立体地图。
+- 分类与归档继续只根据旅行日志更新。
+
+本阶段移除了 JSON 导入导出入口；后续桌面 App 将复用同一数据模型，把浏览器存储适配为本地项目文件夹。
+
+---
+
 # Travel Reverie 6.4 · Compact Journal & Theme Studio Sync
 
 本版本直接建立在 6.3 上，没有修改 Oil Painting 的页面结构、动画或卡片设计。
@@ -118,13 +134,13 @@ python3 -m http.server 8000
 访问：
 
 ```text
-http://localhost:8000/?build=6.4-compact-journal-theme-sync
+http://localhost:8000/?build=7.0-independent-browser-data
 ```
 
 控制台应显示：
 
 ```text
-[Travel Reverie] build 6.4-compact-journal-theme-sync loaded
+[Travel Reverie] build 7.0-independent-browser-data loaded
 [Travel Reverie] separate memory card components 6.4 loaded
 [Travel Reverie] editable Film reference board 6.4 loaded
 [Travel Reverie] creative experience 6.4 loaded
