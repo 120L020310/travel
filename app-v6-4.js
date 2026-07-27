@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.2-modular-route-cards";
-  console.info("[Travel Reverie] build 7.2-modular-route-cards loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.2.1-route-edit-entry";
+  console.info("[Travel Reverie] build 7.2.1-route-edit-entry loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -1299,7 +1299,10 @@
             <h4>${escapeHTML(trip.title || "未命名旅行")}</h4>
             ${dateLabel ? `<time>${escapeHTML(dateLabel)}</time>` : ""}
           </div>
-          <span class="route-stop-count">${trip.stops.length}<small>地点</small></span>
+          <div class="route-card-controls">
+            <span class="route-stop-count">${trip.stops.length}<small>地点</small></span>
+            <button type="button" class="tiny-button route-card-edit" aria-label="编辑旅行：${escapeHTML(trip.title || "未命名旅行")}">编辑旅行</button>
+          </div>
         </div>
         ${trip.note ? `<p class="route-card-note">${escapeHTML(trip.note)}</p>` : ""}
         <div class="route-steps"></div>`;
@@ -1323,9 +1326,10 @@
         stepsBox.appendChild(more);
       }
 
-      const actions = document.createElement("div");
-      actions.className = "route-stage-actions";
+      $(".route-card-edit", panel).addEventListener("click", () => openRouteDialog(trip.id));
       if (trip.stops.length > ROUTE_STOP_PREVIEW_COUNT) {
+        const actions = document.createElement("div");
+        actions.className = "route-stage-actions";
         const expand = document.createElement("button");
         expand.type = "button";
         expand.className = "tiny-button route-trip-toggle";
@@ -1337,14 +1341,8 @@
           renderRouteTimeline();
         });
         actions.appendChild(expand);
+        panel.appendChild(actions);
       }
-      const edit = document.createElement("button");
-      edit.type = "button";
-      edit.className = "tiny-button";
-      edit.textContent = "编辑路线";
-      edit.addEventListener("click", () => openRouteDialog(trip.id));
-      actions.appendChild(edit);
-      panel.appendChild(actions);
       box.appendChild(panel);
     });
 

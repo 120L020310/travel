@@ -1628,6 +1628,13 @@ dialog,
   min-width: 0;
 }
 
+.route-card-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .route-card-title h4 {
   margin: 0;
   font-size: 1.42rem;
@@ -1664,6 +1671,20 @@ dialog,
   font-size: .56rem;
   font-weight: 500;
   opacity: .48;
+}
+
+.route-card-edit {
+  min-height: 48px;
+  padding: 8px 10px;
+  border-color: color-mix(in srgb, var(--accent-color) 34%, rgba(72,63,74,.16));
+  color: var(--accent-color);
+  font-weight: 700;
+  white-space: nowrap;
+  background: rgba(255,255,255,.7);
+}
+
+.route-card-edit:hover {
+  background: rgba(255,255,255,.96);
 }
 
 .route-card-note {
@@ -1791,8 +1812,7 @@ dialog,
 /* Route editor: route trips own their stop snapshots and are edited separately
    from travel journal pages. */
 .route-head > .tiny-button { margin: 2px 0 2px; }
-.route-stage-actions { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:14px; }
-.route-stage-actions > .tiny-button:last-child { margin-left:auto; }
+.route-stage-actions { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; margin-top:14px; }
 .route-trip-toggle { color:var(--accent-color); }
 .route-dialog { width:min(920px, calc(100vw - 26px)); }
 .route-current-field > span { display:flex; align-items:center; gap:8px; min-height:40px; padding:0 11px; border:1px solid rgba(72,63,74,.16); border-radius:12px; background:rgba(255,255,255,.48); }
@@ -1823,6 +1843,10 @@ dialog,
 .route-dialog-actions { margin-top:20px; }
 
 @media (max-width: 620px) {
+  .route-card-head { gap:10px; }
+  .route-card-controls { gap:6px; }
+  .route-card-edit { min-height:42px; padding:7px 8px; font-size:.67rem; }
+  .route-stop-count { min-width:42px; min-height:42px; }
   .route-dialog { width:calc(100vw - 14px); }
   .route-stop-editor,
   .route-stop-fields { padding:14px; }
