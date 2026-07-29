@@ -258,6 +258,10 @@ main { position: relative; z-index: 1; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #eee6dc; color: #393437; }
 .paint-marker { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 52% 44% 53% 46%; color: white; font-size: .8rem; background: linear-gradient(145deg, #5e7280, #a4819b); border: 2px solid rgba(255,255,255,.88); box-shadow: 0 6px 14px rgba(20,25,30,.28); font-weight: 700; }
 .origin-marker { background: linear-gradient(145deg, #a38f64, #6c5848); }
+.route-waypoint-icon { border: 0 !important; background: transparent !important; }
+.route-waypoint-pin { position: relative; display: block; width: 7px; height: 11px; }
+.route-waypoint-pin::before { content:""; position:absolute; top:0; left:0; width:7px; height:7px; border-radius:50%; background:#dc3c3c; box-shadow:0 1px 2px rgba(77,27,27,.28); }
+.route-waypoint-pin::after { content:""; position:absolute; top:5px; left:1px; border-right:2.5px solid transparent; border-left:2.5px solid transparent; border-top:6px solid #dc3c3c; filter:drop-shadow(0 1px 1px rgba(77,27,27,.18)); }
 .route-sidebar { padding: 24px 22px; border-radius: 34px 18px 42px 23px; position: sticky; top: 112px; }
 .route-head small { display: block; text-transform: uppercase; letter-spacing: .12em; opacity: .56; }
 .route-head h3 { margin: 6px 0 8px; font: 600 2.15rem/1 var(--display-font); }

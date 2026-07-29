@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.4.1-route-waypoints";
-  console.info("[Travel Reverie] build 7.4.1-route-waypoints loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.4.2-route-pins";
+  console.info("[Travel Reverie] build 7.4.2-route-pins loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -1896,6 +1896,12 @@
       if (!coords.length) return;
       const color = routeColor(tripIndex);
       const lineWeight = trip.current ? 3.4 : 2.2;
+      const waypointIcon = L.divIcon({
+        className: "route-waypoint-icon",
+        html: '<span class="route-waypoint-pin" aria-hidden="true"></span>',
+        iconSize: [7, 11],
+        iconAnchor: [3.5, 11]
+      });
       if (coords.length >= 2) {
         L.polyline(coords, {
           renderer: map.options.renderer,
@@ -1909,14 +1915,10 @@
         }).addTo(routeLayer);
       }
       coords.forEach(coord => {
-        L.circleMarker(coord, {
-          renderer: map.options.renderer,
-          radius: lineWeight / 2,
-          stroke: false,
-          fill: true,
-          fillColor: "#dc3c3c",
-          fillOpacity: .98,
-          interactive: false
+        L.marker(coord, {
+          icon: waypointIcon,
+          interactive: false,
+          keyboard: false
         }).addTo(routeLayer);
       });
     });
