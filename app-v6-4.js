@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.6.3-oil-photo-gallery";
-  console.info("[Travel Reverie] build 7.6.3-oil-photo-gallery loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.7.0-photo-wall-carousel";
+  console.info("[Travel Reverie] build 7.7.0-photo-wall-carousel loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {

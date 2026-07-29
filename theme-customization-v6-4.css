@@ -633,6 +633,31 @@ html[data-memory-style="film"] .route-stage.is-compact .route-summary {
   transition: opacity .24s ease, transform .24s ease;
 }
 
+.film-reference-photo-count {
+  display: none;
+  min-width: 34px;
+  min-height: 29px;
+  place-items: center;
+  padding: 6px 8px;
+  border: 1px solid rgba(244,221,186,.38);
+  color: #f2dfbd;
+  background: rgba(25,19,16,.70);
+  font: 400 .40rem/1 var(--space-mono);
+  letter-spacing: .05em;
+}
+
+.film-reference-card.is-photo-carousel {
+  cursor: pointer;
+}
+
+.film-reference-card.is-photo-carousel img {
+  cursor: pointer;
+}
+
+.film-reference-card.is-photo-carousel .film-reference-photo-count {
+  display: grid;
+}
+
 .film-reference-card:hover .film-reference-edit-controls,
 .film-reference-card:focus-within .film-reference-edit-controls {
   opacity: 1;
@@ -923,7 +948,7 @@ html[data-memory-style="y2k"] .y2k-section-emoji-layer {
 }
 
 .film-reference-card.is-custom-film-image figcaption::after {
-  content: "自定义图片 · 已保存在当前浏览器";
+  content: "自定义照片 · 已保存在当前浏览器";
   display: block;
   margin-top: 7px;
   color: color-mix(in srgb, var(--accent) 72%, #f2dfbd);
