@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.4-fixed-trip-scrollers";
-  console.info("[Travel Reverie] build 7.4-fixed-trip-scrollers loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.4.1-route-waypoints";
+  console.info("[Travel Reverie] build 7.4.1-route-waypoints loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -1893,18 +1893,32 @@
       const coords = trip.stops
         .map(stop => [Number(stop.lat), Number(stop.lng)])
         .filter(coord => coord.every(Number.isFinite));
-      if (coords.length < 2) return;
+      if (!coords.length) return;
       const color = routeColor(tripIndex);
-      L.polyline(coords, {
-        renderer: map.options.renderer,
-        color,
-        weight: trip.current ? 3.4 : 2.2,
-        opacity: trip.current ? .84 : .50,
-        lineCap:"round",
-        lineJoin:"round",
-        interactive:false,
-        dashArray: trip.current ? null : "3 4"
-      }).addTo(routeLayer);
+      const lineWeight = trip.current ? 3.4 : 2.2;
+      if (coords.length >= 2) {
+        L.polyline(coords, {
+          renderer: map.options.renderer,
+          color,
+          weight: lineWeight,
+          opacity: trip.current ? .84 : .50,
+          lineCap:"round",
+          lineJoin:"round",
+          interactive:false,
+          dashArray: trip.current ? null : "3 4"
+        }).addTo(routeLayer);
+      }
+      coords.forEach(coord => {
+        L.circleMarker(coord, {
+          renderer: map.options.renderer,
+          radius: lineWeight / 2,
+          stroke: false,
+          fill: true,
+          fillColor: "#dc3c3c",
+          fillOpacity: .98,
+          interactive: false
+        }).addTo(routeLayer);
+      });
     });
 
     if (activeCountry && groupedCountries().has(activeCountry)) showCountryDestinations(activeCountry, false);
