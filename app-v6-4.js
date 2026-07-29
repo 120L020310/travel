@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.5-map-zoom-and-slim-globe-points";
-  console.info("[Travel Reverie] build 7.5-map-zoom-and-slim-globe-points loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.6-route-map-sync";
+  console.info("[Travel Reverie] build 7.6-route-map-sync loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -488,6 +488,7 @@
   let routeEditorDraft = null;
   let activeRouteStopId = "";
   let routeGeocodeCandidates = [];
+  let routeStopHighlightTimer = 0;
   let mapStabilizeFrame = 0;
   let mapStabilizeTimer = 0;
   let firstTileReady = false;
@@ -1294,18 +1295,71 @@
 
       const stepsBox = $(".route-steps", panel);
       trip.stops.forEach((stop, stopIndex) => {
-        const row = document.createElement("div");
+        const row = document.createElement("button");
+        row.type = "button";
         row.className = "route-step";
+        row.dataset.routeStopId = stop.id;
+        row.setAttribute("aria-label", `在地图上对焦：${stop.name || "未命名地点"}`);
         row.innerHTML = `
           <div class="step-no" style="--route-step-color:${safeColor(color)}">${stopIndex + 1}</div>
           <div class="step-label">
             <b>${escapeHTML(stop.name || "未命名地点")}</b>
             <span>${escapeHTML(stop.country || stop.address || "未填写地区")}</span>
           </div>`;
+        row.addEventListener("click", () => focusRouteStopOnMap(stop));
         stepsBox.appendChild(row);
       });
       $(".route-card-edit", panel).addEventListener("click", () => openRouteDialog(trip.id));
       box.appendChild(panel);
+    });
+  }
+
+  function revealRouteStopInTimeline(stopId) {
+    if (!stopId) return;
+    const step = $$(".route-step[data-route-stop-id]").find(item => item.dataset.routeStopId === stopId);
+    if (!step) return;
+    const steps = step.closest(".route-steps");
+    const panel = step.closest(".route-stage");
+    const timeline = $("#routeTimeline");
+
+    if (timeline && panel) {
+      timeline.scrollTo({
+        top: Math.max(0, panel.offsetTop - (timeline.clientHeight - panel.clientHeight) / 2),
+        behavior: "smooth"
+      });
+    }
+    if (steps) {
+      const stepCenter = step.offsetTop + step.offsetHeight / 2;
+      const stepsTop = steps.offsetTop;
+      steps.scrollTo({
+        top: Math.max(0, stepCenter - stepsTop - steps.clientHeight / 2),
+        behavior: "smooth"
+      });
+    }
+
+    clearTimeout(routeStopHighlightTimer);
+    step.classList.remove("is-map-focused");
+    void step.offsetWidth;
+    step.classList.add("is-map-focused");
+    routeStopHighlightTimer = setTimeout(() => step.classList.remove("is-map-focused"), 1700);
+  }
+
+  function focusRouteStopOnMap(stop) {
+    const lat = Number(stop?.lat);
+    const lng = Number(stop?.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    if (currentMapMode === "3d") {
+      initGlobe().then(instance => {
+        if (instance) callGlobeMethod(instance, "pointOfView", { lat, lng, altitude: .78 }, 720);
+      });
+      return;
+    }
+
+    initMap().then(instance => {
+      if (!instance) return;
+      instance.flyTo([lat, lng], Math.max(instance.getZoom(), 8.25), { animate:true, duration:.72 });
+      scheduleMapStabilization();
     });
   }
 
@@ -1859,7 +1913,10 @@
       const point = [Number(stop.lat), Number(stop.lng)];
       bounds.push(point);
       const marker = L.marker(point, { icon: makeCityIcon(Boolean(stop.current)), keyboard:true, title:stop.name });
-      marker.on("click", () => showMapDestinationCard(stop));
+      marker.on("click", () => {
+        showMapDestinationCard(stop);
+        revealRouteStopInTimeline(stop.id);
+      });
       marker.bindTooltip(stop.name, { direction:"top", offset:[0,-8], opacity:.9 });
       marker.addTo(cityLayer);
     });
@@ -1890,17 +1947,18 @@
     });
 
     state.routeTrips.forEach((trip, tripIndex) => {
-      const coords = trip.stops
-        .map(stop => [Number(stop.lat), Number(stop.lng)])
-        .filter(coord => coord.every(Number.isFinite));
+      const routeStops = trip.stops
+        .map(stop => ({ ...stop, lat:Number(stop.lat), lng:Number(stop.lng), current:Boolean(trip.current) }))
+        .filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
+      const coords = routeStops.map(stop => [stop.lat, stop.lng]);
       if (!coords.length) return;
       const color = routeColor(tripIndex);
       const lineWeight = trip.current ? 3.4 : 2.2;
       const waypointIcon = L.divIcon({
         className: "route-waypoint-icon",
         html: '<span class="route-waypoint-pin" aria-hidden="true"></span>',
-        iconSize: [7, 11],
-        iconAnchor: [3.5, 11]
+        iconSize: [19, 22],
+        iconAnchor: [9.5, 17]
       });
       if (coords.length >= 2) {
         L.polyline(coords, {
@@ -1914,12 +1972,18 @@
           dashArray: trip.current ? null : "3 4"
         }).addTo(routeLayer);
       }
-      coords.forEach(coord => {
-        L.marker(coord, {
+      routeStops.forEach(stop => {
+        const marker = L.marker([stop.lat, stop.lng], {
           icon: waypointIcon,
-          interactive: false,
-          keyboard: false
-        }).addTo(routeLayer);
+          interactive: true,
+          keyboard: true,
+          title: stop.name
+        });
+        marker.on("click", () => {
+          showMapDestinationCard(stop);
+          revealRouteStopInTimeline(stop.id);
+        });
+        marker.addTo(routeLayer);
       });
     });
 
@@ -2129,6 +2193,7 @@
       callGlobeMethod(globe, "arcCircularResolution", 4);
       callGlobeMethod(globe, "onPointClick", data => {
         showMapDestinationCard(data);
+        revealRouteStopInTimeline(data?.id);
       });
       callGlobeMethod(globe, "onGlobeReady", () => {
         setGlobeStatus(t("globeReady"), false, false);

@@ -1,4 +1,4 @@
-# Travel Reverie 7.5 · Map Zoom & Slim Globe Points
+# Travel Reverie 7.6 · Route Map Sync
 
 ## 1. 浏览器数据持久化与模型解绑
 
@@ -14,6 +14,7 @@
 - 每张旅行卡片内的完整地点列表也可直接上下滚动浏览。
 - 平面地图会在每个路线坐标上显示📍式红色小图钉，针头圆球直径固定为 7px。
 - 平面地图可放大至 12 级；立体地球可更靠近观察，路线坐标柱也已改细。
+- 点击路线地点可让当前平面地图或立体地球对焦；点击地图坐标会打开左下角地点卡，并定位高亮对应路线地点。
 - 每张旅行卡片的右上角固定显示“编辑”，无需滚动到地点列表底部。
 - 路线地点可通过按钮搜索地址并选择经纬度，地图只读取这些路线快照。
 
@@ -147,7 +148,7 @@ http://localhost:8000/?build=7.2-modular-routes
 控制台应显示：
 
 ```text
-[Travel Reverie] build 7.5-map-zoom-and-slim-globe-points loaded
+[Travel Reverie] build 7.6-route-map-sync loaded
 [Travel Reverie] separate memory card components 6.4 loaded
 [Travel Reverie] editable Film reference board 6.4 loaded
 [Travel Reverie] creative experience 6.4 loaded
