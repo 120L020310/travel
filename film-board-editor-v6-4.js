@@ -7,7 +7,7 @@
   const CAROUSEL_INTERVAL = 5200;
   const objectUrls = new Map();
   const carouselTimers = new Map();
-  const libraryState = { dialog:null, figure:null, selectedIds:new Set(), thumbnailUrls:[] };
+  const libraryState = { dialog:null, figure:null, selectedIds:new Set(), thumbnailUrls:[], contextMenu:null, contextFigure:null };
 
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
@@ -34,11 +34,17 @@
     });
   }
 
-  async function writeStoredImages(slot, images) {
+  async function writeStoredImages(slot, images, options = {}) {
     const database = await openDatabase();
     return new Promise((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, "readwrite");
-      transaction.objectStore(STORE_NAME).put({ slot, images, updatedAt:Date.now() });
+      transaction.objectStore(STORE_NAME).put({
+        slot,
+        images,
+        defaultPhoto: options.defaultPhoto || null,
+        coverPhotoId: options.coverPhotoId || "default",
+        updatedAt:Date.now()
+      });
       transaction.oncomplete = resolve;
       transaction.onerror = () => reject(transaction.error);
     });
@@ -59,17 +65,23 @@
   }
 
   function normalizeStoredImages(record) {
+    const normalizePhoto = photo => photo?.blob ? ({
+      id:photo.id || makePhotoId(), blob:photo.blob, name:photo.name || "",
+      type:photo.type || photo.blob.type || "", updatedAt:Number(photo.updatedAt) || Date.now()
+    }) : null;
     if (Array.isArray(record?.images)) {
-      return record.images.filter(photo => photo?.blob).map(photo => ({
-        id:photo.id || makePhotoId(), blob:photo.blob, name:photo.name || "",
-        type:photo.type || photo.blob.type || "", updatedAt:Number(photo.updatedAt) || Date.now()
-      }));
+      return {
+        images:record.images.map(normalizePhoto).filter(Boolean),
+        defaultPhoto:normalizePhoto(record.defaultPhoto),
+        coverPhotoId:record.coverPhotoId || "default"
+      };
     }
-    if (record?.blob) return [{
-      id:`legacy-${record.updatedAt || Date.now()}`, blob:record.blob, name:record.name || "",
-      type:record.type || record.blob.type || "", updatedAt:Number(record.updatedAt) || Date.now()
-    }];
-    return [];
+    if (record?.blob) return {
+      images:[{ id:`legacy-${record.updatedAt || Date.now()}`, blob:record.blob, name:record.name || "", type:record.type || record.blob.type || "", updatedAt:Number(record.updatedAt) || Date.now() }],
+      defaultPhoto:null,
+      coverPhotoId:"default"
+    };
+    return { images:[], defaultPhoto:null, coverPhotoId:"default" };
   }
 
   function releaseObjectUrl(slot) {
@@ -84,11 +96,17 @@
     libraryState.thumbnailUrls = [];
   }
 
+  function coverPhotoId(figure) {
+    const requested = figure._coverPhotoId || "default";
+    return requested === "default" || (figure._filmPhotos || []).some(photo => photo.id === requested) ? requested : "default";
+  }
+
   function photoCollection(figure) {
-    return [
-      { id:"default", kind:"default", src:figure.dataset.defaultFilmSrc || "", alt:figure.dataset.defaultFilmAlt || "" },
-      ...(Array.isArray(figure._filmPhotos) ? figure._filmPhotos : []).map(photo => ({ ...photo, kind:"custom" }))
-    ];
+    const defaultPhoto = { ...(figure._defaultPhoto || {}), id:"default", kind:"default", src:figure.dataset.defaultFilmSrc || "", alt:figure.dataset.defaultFilmAlt || "" };
+    const allPhotos = [defaultPhoto, ...(Array.isArray(figure._filmPhotos) ? figure._filmPhotos : []).map(photo => ({ ...photo, kind:"custom" }))];
+    const coverId = coverPhotoId(figure);
+    const cover = allPhotos.find(photo => photo.id === coverId) || defaultPhoto;
+    return [cover, ...allPhotos.filter(photo => photo.id !== cover.id)];
   }
 
   function updatePhotoCount(figure, index, count) {
@@ -109,9 +127,17 @@
     const photo = photos[index];
     releaseObjectUrl(slot);
     if (photo.kind === "default") {
-      image.src = photo.src;
-      image.alt = photo.alt || image.alt;
-      figure.classList.remove("is-custom-film-image");
+      if (photo.blob) {
+        const url = URL.createObjectURL(photo.blob);
+        objectUrls.set(slot, url);
+        image.src = url;
+        image.alt = photo.name ? `自定义默认照片：${photo.name}` : "自定义默认照片";
+        figure.classList.add("is-custom-film-image");
+      } else {
+        image.src = photo.src;
+        image.alt = photo.alt || image.alt;
+        figure.classList.remove("is-custom-film-image");
+      }
     } else {
       const url = URL.createObjectURL(photo.blob);
       objectUrls.set(slot, url);
@@ -196,24 +222,26 @@
     const selectedIndex = onlySelectedId ? customPhotoIndex(figure, onlySelectedId) : -1;
     const items = photos.map((photo, index) => {
       if (photo.kind === "default") {
-        return `<article class="photo-library-item is-default${index === activeIndex ? " is-active" : ""}">
-          <img src="${escapeHTML(photo.src)}" alt="${escapeHTML(photo.alt)}">
-          <div><strong>项目默认照片</strong><span>固定保留 · 顺序第 1 张</span></div>
+        const source = photo.blob ? URL.createObjectURL(photo.blob) : photo.src;
+        if (photo.blob) libraryState.thumbnailUrls.push(source);
+        return `<article class="photo-library-item is-default${index === activeIndex ? " is-active" : ""}${photo.id === coverPhotoId(figure) ? " is-cover" : ""}">
+          <img src="${escapeHTML(source)}" alt="${escapeHTML(photo.alt || photo.name || "默认照片")}">
+          <div><strong>${photo.blob ? "自定义默认照片" : "项目默认照片"}</strong><span>${photo.id === coverPhotoId(figure) ? "当前首图" : `轮播第 ${index + 1} 张`}</span></div>
         </article>`;
       }
       const url = URL.createObjectURL(photo.blob);
       libraryState.thumbnailUrls.push(url);
       const selected = libraryState.selectedIds.has(photo.id);
-      return `<label class="photo-library-item${selected ? " is-selected" : ""}${index === activeIndex ? " is-active" : ""}">
+      return `<label class="photo-library-item${selected ? " is-selected" : ""}${index === activeIndex ? " is-active" : ""}${photo.id === coverPhotoId(figure) ? " is-cover" : ""}">
         <input type="checkbox" data-library-select="${escapeHTML(photo.id)}" ${selected ? "checked" : ""}>
         <img src="${escapeHTML(url)}" alt="${escapeHTML(photo.name || "自定义旅行照片")}">
-        <div><strong>${escapeHTML(photo.name || "未命名照片")}</strong><span>轮播第 ${index + 1} 张</span></div>
+        <div><strong>${escapeHTML(photo.name || "未命名照片")}</strong><span>${photo.id === coverPhotoId(figure) ? "当前首图" : `轮播第 ${index + 1} 张`}</span></div>
       </label>`;
     }).join("");
 
     dialog.innerHTML = `
       <header class="photo-library-header"><div><p>PHOTO LIBRARY</p><h2>地点相框照片库</h2><small>右键打开 · 图片顺序即为轮播顺序</small></div><button type="button" class="photo-library-close" data-library-action="close" aria-label="关闭照片库">×</button></header>
-      <div class="photo-library-toolbar"><label class="photo-library-add">＋ 添加照片<input type="file" accept="image/*" multiple hidden></label><button type="button" data-library-action="select-all" ${customPhotos.length ? "" : "disabled"}>全选自定义照片</button><button type="button" data-library-action="clear-selection" ${selectedCount ? "" : "disabled"}>取消选择</button><button type="button" data-library-action="reset" ${customPhotos.length ? "" : "disabled"}>清空自定义</button></div>
+      <div class="photo-library-toolbar"><label class="photo-library-add">＋ 添加照片<input data-library-input="add" type="file" accept="image/*" multiple hidden></label><label class="photo-library-add">替换默认图<input data-library-input="replace-default" type="file" accept="image/*" hidden></label><button type="button" data-library-action="restore-default-image" ${figure._defaultPhoto ? "" : "disabled"}>恢复项目默认图</button><button type="button" data-library-action="set-cover" ${selectedCount === 1 ? "" : "disabled"}>设为首图</button><button type="button" data-library-action="restore-default-cover" ${coverPhotoId(figure) !== "default" ? "" : "disabled"}>默认图设为首图</button><button type="button" data-library-action="select-all" ${customPhotos.length ? "" : "disabled"}>全选自定义照片</button><button type="button" data-library-action="clear-selection" ${selectedCount ? "" : "disabled"}>取消选择</button><button type="button" data-library-action="reset" ${customPhotos.length ? "" : "disabled"}>清空自定义</button></div>
       <p class="photo-library-status">${customPhotos.length ? `已选 ${selectedCount} 张自定义照片` : "当前仅有项目默认照片"}</p>
       <div class="photo-library-grid">${items}</div>
       <footer class="photo-library-footer"><div class="photo-library-order"><button type="button" data-library-action="move-up" ${selectedIndex > 0 ? "" : "disabled"}>↑ 上移</button><button type="button" data-library-action="move-down" ${selectedIndex >= 0 && selectedIndex < customPhotos.length - 1 ? "" : "disabled"}>↓ 下移</button><small>请选择一张自定义照片以调整顺序</small></div><button type="button" class="photo-library-delete" data-library-action="delete-selected" ${selectedCount ? "" : "disabled"}>删除选中（${selectedCount}）</button></footer>`;
@@ -223,14 +251,15 @@
       else libraryState.selectedIds.delete(input.dataset.librarySelect);
       renderPhotoLibrary();
     }));
-    $("input[type=file]", dialog).addEventListener("change", handleLibraryAdd);
+    $("[data-library-input=add]", dialog).addEventListener("change", handleLibraryAdd);
+    $("[data-library-input=replace-default]", dialog).addEventListener("change", handleDefaultReplacement);
     $$('[data-library-action]', dialog).forEach(button => button.addEventListener("click", handleLibraryAction));
   }
 
   async function persistPhotoLibrary(figure) {
     const slot = figure.dataset.filmSlot;
     if (!slot) return;
-    if (figure._filmPhotos?.length) await writeStoredImages(slot, figure._filmPhotos);
+    if (figure._filmPhotos?.length || figure._defaultPhoto) await writeStoredImages(slot, figure._filmPhotos || [], { defaultPhoto:figure._defaultPhoto, coverPhotoId:coverPhotoId(figure) });
     else await removeStoredImages(slot);
     startCarousel(figure);
   }
@@ -254,6 +283,24 @@
     }
   }
 
+  async function handleDefaultReplacement(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    const figure = libraryState.figure;
+    if (!figure || !file) return;
+    try {
+      await validateImage(file);
+      figure._defaultPhoto = { blob:file, name:file.name, type:file.type, updatedAt:Date.now() };
+      figure._coverPhotoId = "default";
+      await persistPhotoLibrary(figure);
+      showPhotoAt(figure, 0);
+      renderPhotoLibrary();
+    } catch (error) {
+      console.error("[Travel Reverie] Default photo replacement failed", error);
+      alert(error?.message || "替换默认照片失败，请重试。");
+    }
+  }
+
   async function handleLibraryAction(event) {
     const action = event.currentTarget.dataset.libraryAction;
     const figure = libraryState.figure;
@@ -262,9 +309,24 @@
     if (action === "close") { dialog.close(); return; }
     if (action === "select-all") { libraryState.selectedIds = new Set((figure._filmPhotos || []).map(photo => photo.id)); renderPhotoLibrary(); return; }
     if (action === "clear-selection") { libraryState.selectedIds.clear(); renderPhotoLibrary(); return; }
+    if (action === "set-cover") {
+      const id = [...libraryState.selectedIds][0];
+      if (!id || customPhotoIndex(figure, id) < 0) return;
+      figure._coverPhotoId = id;
+      await persistPhotoLibrary(figure); showPhotoAt(figure, 0); renderPhotoLibrary(); return;
+    }
+    if (action === "restore-default-cover") {
+      figure._coverPhotoId = "default";
+      await persistPhotoLibrary(figure); showPhotoAt(figure, 0); renderPhotoLibrary(); return;
+    }
+    if (action === "restore-default-image") {
+      figure._defaultPhoto = null;
+      await persistPhotoLibrary(figure); showPhotoAt(figure, 0); renderPhotoLibrary(); return;
+    }
     if (action === "reset") {
       if (!confirm("清空此相框的全部自定义照片，并恢复为项目默认照片？")) return;
       figure._filmPhotos = [];
+      figure._coverPhotoId = "default";
       libraryState.selectedIds.clear();
       try { await persistPhotoLibrary(figure); showPhotoAt(figure, 0); renderPhotoLibrary(); }
       catch (error) { console.error("[Travel Reverie] Photo library reset failed", error); alert("清空照片失败，请稍后重试。"); }
@@ -275,6 +337,7 @@
       if (!selected.length || !confirm(`确定删除选中的 ${selected.length} 张照片吗？此操作无法撤销。`)) return;
       const currentIndex = Number(figure.dataset.photoIndex || 0);
       figure._filmPhotos = (figure._filmPhotos || []).filter(photo => !libraryState.selectedIds.has(photo.id));
+      if (libraryState.selectedIds.has(figure._coverPhotoId)) figure._coverPhotoId = "default";
       libraryState.selectedIds.clear();
       try { await persistPhotoLibrary(figure); showPhotoAt(figure, Math.min(currentIndex, photoCollection(figure).length - 1)); renderPhotoLibrary(); }
       catch (error) { console.error("[Travel Reverie] Photo library deletion failed", error); alert("删除照片失败，请稍后重试。"); }
@@ -286,7 +349,7 @@
       const target = index + (action === "move-up" ? -1 : 1);
       if (index < 0 || target < 0 || target >= figure._filmPhotos.length) return;
       [figure._filmPhotos[index], figure._filmPhotos[target]] = [figure._filmPhotos[target], figure._filmPhotos[index]];
-      try { await persistPhotoLibrary(figure); showPhotoAt(figure, target + 1); renderPhotoLibrary(); }
+      try { await persistPhotoLibrary(figure); showPhotoAt(figure, 0); renderPhotoLibrary(); }
       catch (error) { console.error("[Travel Reverie] Photo order update failed", error); alert("调整照片顺序失败，请稍后重试。"); }
     }
   }
@@ -299,10 +362,45 @@
     if (!dialog.open) dialog.showModal();
   }
 
+  function hidePhotoContextMenu() {
+    if (!libraryState.contextMenu) return;
+    libraryState.contextMenu.hidden = true;
+    libraryState.contextFigure = null;
+  }
+
+  function ensurePhotoContextMenu() {
+    if (libraryState.contextMenu) return libraryState.contextMenu;
+    const menu = document.createElement("div");
+    menu.className = "photo-frame-context-menu";
+    menu.hidden = true;
+    menu.innerHTML = '<button type="button">编辑照片库</button>';
+    $("button", menu).addEventListener("click", () => {
+      const figure = libraryState.contextFigure;
+      hidePhotoContextMenu();
+      if (figure) openPhotoLibrary(figure);
+    });
+    document.body.appendChild(menu);
+    document.addEventListener("pointerdown", event => {
+      if (!menu.hidden && !menu.contains(event.target)) hidePhotoContextMenu();
+    });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") hidePhotoContextMenu(); });
+    libraryState.contextMenu = menu;
+    return menu;
+  }
+
+  function showPhotoContextMenu(figure, clientX, clientY) {
+    const menu = ensurePhotoContextMenu();
+    libraryState.contextFigure = figure;
+    menu.hidden = false;
+    menu.style.left = `${Math.min(clientX, innerWidth - 142)}px`;
+    menu.style.top = `${Math.min(clientY, innerHeight - 42)}px`;
+  }
+
   async function handleBrokenCustomPhoto(figure) {
     const active = photoCollection(figure)[Number(figure.dataset.photoIndex || 0)];
     if (!active || active.kind !== "custom") return;
     figure._filmPhotos = (figure._filmPhotos || []).filter(photo => photo.id !== active.id);
+    if (figure._coverPhotoId === active.id) figure._coverPhotoId = "default";
     try { await persistPhotoLibrary(figure); } catch (_) {}
     showPhotoAt(figure, 0);
     if (libraryState.figure === figure && libraryState.dialog?.open) renderPhotoLibrary();
@@ -327,9 +425,12 @@
       if (event.target.closest("a") || photoCollection(figure).length < 2) return;
       nextPhoto(figure);
     });
-    figure.addEventListener("contextmenu", event => { event.preventDefault(); openPhotoLibrary(figure); });
+    figure.addEventListener("contextmenu", event => { event.preventDefault(); showPhotoContextMenu(figure, event.clientX, event.clientY); });
     try {
-      figure._filmPhotos = normalizeStoredImages(await readStoredImages(slot));
+      const stored = normalizeStoredImages(await readStoredImages(slot));
+      figure._filmPhotos = stored.images;
+      figure._defaultPhoto = stored.defaultPhoto;
+      figure._coverPhotoId = stored.coverPhotoId;
       showPhotoAt(figure, figure._filmPhotos.length ? 1 : 0);
       startCarousel(figure);
     } catch (error) {

@@ -975,6 +975,7 @@ html[data-memory-style="y2k"] .y2k-section-emoji-layer {
 .photo-library-item { position:relative; display:block; min-width:0; overflow:hidden; border:1px solid rgba(244,221,186,.20); background:#0f0c0b; cursor:pointer; }
 .photo-library-item.is-selected { border-color:#d69b60; box-shadow:0 0 0 2px rgba(214,155,96,.38); }
 .photo-library-item.is-active::after { content:"当前播放"; position:absolute; top:8px; right:8px; padding:4px 6px; color:#2a1c12; background:#e6c48e; font:400 .42rem/1 var(--space-mono); letter-spacing:.04em; }
+.photo-library-item.is-cover::before { content:"首图"; position:absolute; z-index:4; left:8px; bottom:66px; padding:4px 6px; color:#25180f; background:#d49a61; font:400 .42rem/1 var(--space-mono); letter-spacing:.04em; }
 .photo-library-item input { position:absolute; z-index:3; top:9px; left:9px; width:16px; height:16px; accent-color:#d49a61; }
 .photo-library-item img { display:block; width:100%; aspect-ratio:4 / 3; object-fit:cover; filter:sepia(.12) saturate(.88) contrast(1.04); }
 .photo-library-item div { min-height:58px; padding:9px 10px; background:rgba(32,24,20,.94); }
@@ -987,6 +988,9 @@ html[data-memory-style="y2k"] .y2k-section-emoji-layer {
 .photo-library-order small { color:rgba(239,219,185,.52); font-size:.62rem; }
 .photo-library-delete { border-color:rgba(201,105,87,.64); color:#f0c5b9; background:rgba(118,48,38,.32); }
 .photo-library-delete:hover:not(:disabled) { background:rgba(145,55,43,.72); }
+.photo-frame-context-menu { position:fixed; z-index:2500; padding:4px; border:1px solid rgba(244,221,186,.34); background:rgba(31,23,18,.96); box-shadow:0 10px 26px rgba(0,0,0,.3); }
+.photo-frame-context-menu button { min-height:27px; padding:6px 9px; border:0; color:#f0dfc0; background:transparent; font:400 .54rem/1 var(--space-mono); letter-spacing:.03em; white-space:nowrap; }
+.photo-frame-context-menu button:hover { background:rgba(203,150,95,.24); }
 @media (max-width:760px) { .photo-library-dialog { width:calc(100vw - 18px); max-height:90vh; } .photo-library-header,.photo-library-toolbar,.photo-library-status,.photo-library-footer { padding-left:16px; padding-right:16px; } .photo-library-grid { grid-template-columns:repeat(2,minmax(0,1fr)); max-height:calc(90vh - 320px); padding-left:16px; padding-right:16px; } .photo-library-footer { align-items:stretch; flex-direction:column; } .photo-library-delete { width:100%; } }
 
 

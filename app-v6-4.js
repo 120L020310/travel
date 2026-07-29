@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.8.0-photo-library-manager";
-  console.info("[Travel Reverie] build 7.8.0-photo-library-manager loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.8.1-photo-cover-context-menu";
+  console.info("[Travel Reverie] build 7.8.1-photo-cover-context-menu loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
