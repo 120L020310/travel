@@ -1163,7 +1163,7 @@ footer { min-height: 90px; padding: 24px max(4vw, 24px); display: flex; justify-
 
 .map-destination-card h3 {
   margin: 12px 0 8px;
-  font: 600 2rem/.95 var(--display-font);
+  font: 600 1.35rem/1.1 var(--display-font);
 }
 
 .map-destination-card > p:not(.map-card-meta) {
