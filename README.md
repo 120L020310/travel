@@ -1,4 +1,4 @@
-# Travel Reverie 7.6.2 · Watercolor Route Layer Fix
+# Travel Reverie 7.6.3 · Oil Photo Gallery
 
 ## 1. 浏览器数据持久化与模型解绑
 
@@ -19,6 +19,7 @@
 - 每张旅行卡片的右上角固定显示“编辑”，无需滚动到地点列表底部。
 - 路线地点可通过按钮搜索地址并选择经纬度，地图只读取这些路线快照。
 - Watercolor Memories 的路线栏改为稳定纸张底色与受限的卡片晕染，避免滚动时水彩底纹覆盖或裁切路线内容。
+- Oil Painting Memories 也会显示与 Film Memories 共用的可编辑照片墙；同一组图片和浏览器内的替换结果会自动复用，但改以油画画框与展签式样式展示。
 
 本阶段移除了 JSON 导入导出入口；后续桌面 App 将复用同一数据模型，把浏览器存储适配为本地项目文件夹。
 

@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.6.2-watercolor-route-layer-fix";
-  console.info("[Travel Reverie] build 7.6.2-watercolor-route-layer-fix loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.6.3-oil-photo-gallery";
+  console.info("[Travel Reverie] build 7.6.3-oil-photo-gallery loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
