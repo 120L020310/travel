@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.4.2-route-pins";
-  console.info("[Travel Reverie] build 7.4.2-route-pins loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.5-map-zoom-and-slim-globe-points";
+  console.info("[Travel Reverie] build 7.5-map-zoom-and-slim-globe-points loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {
@@ -1705,7 +1705,7 @@
       zoomControl: true,
       worldCopyJump: true,
       minZoom: 1.5,
-      maxZoom: 7,
+      maxZoom: 12,
       zoomSnap: .25,
       zoomDelta: .5,
       preferCanvas: true,
@@ -2104,7 +2104,7 @@
       callGlobeMethod(globe, "atmosphereColor", "#c2d0d1");
       callGlobeMethod(globe, "atmosphereAltitude", .14);
       callGlobeMethod(globe, "pointAltitude", .04);
-      callGlobeMethod(globe, "pointRadius", .34);
+      callGlobeMethod(globe, "pointRadius", .16);
       callGlobeMethod(globe, "pointResolution", 8);
       callGlobeMethod(
         globe,
@@ -2160,7 +2160,7 @@
         controls.dampingFactor = .065;
         controls.rotateSpeed = .42;
         controls.zoomSpeed = .68;
-        controls.minDistance = 130;
+        controls.minDistance = 108;
         controls.maxDistance = 460;
         controls.autoRotate = !matchMedia("(prefers-reduced-motion: reduce)").matches;
         controls.autoRotateSpeed = .075;
