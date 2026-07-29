@@ -1,8 +1,8 @@
 (() => {
   "use strict";
 
-  window.TRAVEL_REVERIE_BUILD = "7.6.1-compact-map-card-title";
-  console.info("[Travel Reverie] build 7.6.1-compact-map-card-title loaded");
+  window.TRAVEL_REVERIE_BUILD = "7.6.2-watercolor-route-layer-fix";
+  console.info("[Travel Reverie] build 7.6.2-watercolor-route-layer-fix loaded");
 
   if ("caches" in window) {
     caches.keys().then(keys => {

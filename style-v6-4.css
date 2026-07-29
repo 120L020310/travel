@@ -4305,6 +4305,56 @@ html[data-memory-style="watercolor"] .route-sidebar {
   backdrop-filter: blur(11px);
 }
 
+/*
+  Route cards have two independently scrollable layers.  Safari can promote a
+  translucent backdrop-filter ancestor above those layers while scrolling,
+  which makes the large watercolor wash appear to cut through the route
+  content.  Keep the wash as bounded card paint instead: the sidebar has a
+  stable paper base and every interactive route layer remains in the foreground.
+*/
+html[data-memory-style="watercolor"] .route-sidebar {
+  isolation: isolate;
+  background: rgba(248,248,241,.94);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-memory-style="watercolor"] .route-timeline {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-memory-style="watercolor"] .route-stage {
+  isolation: isolate;
+  contain: paint;
+  color: #405d5e;
+  border-color: rgba(85,122,123,.17);
+  background:
+    radial-gradient(ellipse at 13% 18%, rgba(190,222,215,.38), transparent 32%),
+    radial-gradient(ellipse at 88% 84%, rgba(220,198,217,.28), transparent 34%),
+    linear-gradient(145deg, rgba(255,255,252,.94), rgba(239,245,239,.82));
+  box-shadow: 0 12px 26px rgba(79,105,104,.10);
+}
+
+html[data-memory-style="watercolor"] .route-stage::before {
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(103,158,159,.82), rgba(169,141,171,.18));
+}
+
+html[data-memory-style="watercolor"] .route-stage > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-memory-style="watercolor"] .route-stage .route-step {
+  border-color: rgba(85,122,123,.13);
+  background: rgba(255,255,253,.82);
+}
+
+html[data-memory-style="watercolor"] .route-stage .route-step:hover {
+  background: rgba(255,255,253,.97);
+}
+
 html[data-memory-style="watercolor"] .hero {
   color: #416062;
   background:
