@@ -956,6 +956,39 @@ html[data-memory-style="y2k"] .y2k-section-emoji-layer {
   letter-spacing: .04em;
 }
 
+/* Photo library is opened with a right-click on a destination frame. */
+.film-reference-photo-count { position:absolute; z-index:12; right:14px; top:20px; }
+.photo-library-dialog { width:min(1050px, calc(100vw - 34px)); max-height:min(84vh,780px); padding:0; overflow:hidden; color:#f2dfbd; border:1px solid rgba(244,221,186,.32); background:linear-gradient(145deg,#211914,#14100e 68%); box-shadow:0 28px 90px rgba(0,0,0,.48); }
+.photo-library-dialog::backdrop { background:rgba(14,11,10,.62); backdrop-filter:blur(5px); }
+.photo-library-header { display:flex; align-items:start; justify-content:space-between; gap:20px; padding:24px 26px 18px; border-bottom:1px solid rgba(244,221,186,.18); }
+.photo-library-header p { margin:0 0 5px; color:#d49a61; font:400 .5rem/1 var(--space-mono); letter-spacing:.14em; }
+.photo-library-header h2 { margin:0; color:#f4e2bf; font:600 clamp(1.6rem,3vw,2.35rem)/1 'Playfair Display','Noto Serif SC',serif; }
+.photo-library-header small { display:block; margin-top:8px; color:rgba(239,219,185,.58); font-size:.66rem; }
+.photo-library-close { width:34px; height:34px; border:1px solid rgba(244,221,186,.32); color:#f2dfbd; background:rgba(255,255,255,.05); font-size:1.3rem; }
+.photo-library-toolbar { display:flex; flex-wrap:wrap; gap:8px; padding:16px 26px 0; }
+.photo-library-toolbar button,.photo-library-add,.photo-library-order button,.photo-library-delete { min-height:34px; padding:8px 11px; border:1px solid rgba(244,221,186,.30); color:#f2dfbd; background:rgba(255,255,255,.06); font:400 .55rem/1 var(--space-mono); letter-spacing:.04em; cursor:pointer; }
+.photo-library-add { display:inline-flex; align-items:center; }
+.photo-library-toolbar button:hover:not(:disabled),.photo-library-add:hover,.photo-library-order button:hover:not(:disabled) { background:rgba(201,145,91,.25); }
+.photo-library-toolbar button:disabled,.photo-library-order button:disabled,.photo-library-delete:disabled { opacity:.38; cursor:not-allowed; }
+.photo-library-status { margin:14px 26px; color:rgba(239,219,185,.66); font-size:.7rem; }
+.photo-library-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; max-height:calc(min(84vh,780px) - 278px); padding:0 26px 20px; overflow:auto; }
+.photo-library-item { position:relative; display:block; min-width:0; overflow:hidden; border:1px solid rgba(244,221,186,.20); background:#0f0c0b; cursor:pointer; }
+.photo-library-item.is-selected { border-color:#d69b60; box-shadow:0 0 0 2px rgba(214,155,96,.38); }
+.photo-library-item.is-active::after { content:"当前播放"; position:absolute; top:8px; right:8px; padding:4px 6px; color:#2a1c12; background:#e6c48e; font:400 .42rem/1 var(--space-mono); letter-spacing:.04em; }
+.photo-library-item input { position:absolute; z-index:3; top:9px; left:9px; width:16px; height:16px; accent-color:#d49a61; }
+.photo-library-item img { display:block; width:100%; aspect-ratio:4 / 3; object-fit:cover; filter:sepia(.12) saturate(.88) contrast(1.04); }
+.photo-library-item div { min-height:58px; padding:9px 10px; background:rgba(32,24,20,.94); }
+.photo-library-item strong,.photo-library-item span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.photo-library-item strong { color:#f1dfbd; font:600 .67rem/1.2 'Noto Serif SC','Cardo',serif; }
+.photo-library-item span { margin-top:4px; color:rgba(238,216,181,.58); font:400 .48rem/1 var(--space-mono); }
+.photo-library-item.is-default { cursor:default; opacity:.82; }
+.photo-library-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 26px 22px; border-top:1px solid rgba(244,221,186,.16); }
+.photo-library-order { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.photo-library-order small { color:rgba(239,219,185,.52); font-size:.62rem; }
+.photo-library-delete { border-color:rgba(201,105,87,.64); color:#f0c5b9; background:rgba(118,48,38,.32); }
+.photo-library-delete:hover:not(:disabled) { background:rgba(145,55,43,.72); }
+@media (max-width:760px) { .photo-library-dialog { width:calc(100vw - 18px); max-height:90vh; } .photo-library-header,.photo-library-toolbar,.photo-library-status,.photo-library-footer { padding-left:16px; padding-right:16px; } .photo-library-grid { grid-template-columns:repeat(2,minmax(0,1fr)); max-height:calc(90vh - 320px); padding-left:16px; padding-right:16px; } .photo-library-footer { align-items:stretch; flex-direction:column; } .photo-library-delete { width:100%; } }
+
 
 /* Prevent intrinsic-size placeholders from looking like empty journal space. */
 html:not([data-memory-style="oil"]) .journal-shell {
